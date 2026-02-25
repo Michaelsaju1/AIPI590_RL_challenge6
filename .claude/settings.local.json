@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tail:*)",
+      "Bash(pip install:*)",
+      "Bash(python:*)",
+      "Bash(cmd:*)",
+      "Bash(dir C:\\\\Users\\\\Micha\\\\preference-collector:*)",
+      "Skill(claude-developer-platform)",
+      "Bash(cd \"C:/Users/Micha/preference-collector\" && npm install 2>&1)",
+      "Bash(cd /c/Users/Micha/preference-collector && npm install 2>&1)",
+      "Bash(npm install:*)",
+      "Bash(cmd.exe:*)",
+      "Bash(cd /c/Users/Micha/preference-collector && git init 2>&1)"
+    ]
+  }
+}
