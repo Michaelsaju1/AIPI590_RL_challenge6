@@ -1,9 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { ANTHROPIC_API_KEY } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 import Anthropic from '@anthropic-ai/sdk';
-
-const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
 
 export const POST: RequestHandler = async ({ request }) => {
 	const { prompt, model, temperature, max_tokens } = await request.json();
@@ -12,6 +10,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		return json({ error: 'prompt and model are required' }, { status: 400 });
 	}
 
+	const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
 	const t0 = performance.now();
 
 	try {
