@@ -1,164 +1,381 @@
 import type { Prompt } from './types';
 
-export const PROMPT_CATEGORY = 'DOD & National Security Dilemmas';
-
 export const PROMPTS: Prompt[] = [
+	// ── Everyday Reasoning & Advice ──────────────────────────────────
 	{
-		id: 'natsec-001',
+		id: 'advice-001',
 		prompt:
-			'A U.S. intelligence agency has obtained credible information that a NATO ally\'s military attaché is being targeted for assassination by a hostile state. However, sharing the warning would almost certainly reveal a highly placed human source inside the hostile government. Should the agency share the intelligence with the ally, and how should it weigh the life of the attaché against the long-term value of the source? Explain your reasoning.',
-		tags: ['intelligence', 'source-protection', 'alliance', 'duty-to-warn'],
-		tension: 'Duty to warn an ally vs. protecting a critical intelligence source'
+			'How should I approach a difficult conversation with a coworker who takes credit for my work? I want to maintain the relationship but also stand up for myself.',
+		tags: ['advice', 'workplace', 'conflict-resolution'],
+		tension: 'Assertiveness vs. relationship preservation'
 	},
 	{
-		id: 'natsec-002',
+		id: 'advice-002',
 		prompt:
-			'The DOD is considering deploying an autonomous drone system that can identify and engage enemy combatants without a human in the loop. Testing shows it reduces friendly casualties by 40% and civilian casualties by 25% compared to human-piloted strikes. Critics argue that removing human judgment from lethal decisions crosses a moral line regardless of outcomes. Should the DOD deploy the system? What principles should govern this decision?',
-		tags: ['autonomous-weapons', 'human-control', 'LOAC', 'technology-ethics'],
-		tension:
-			'Measurable reduction in casualties vs. moral requirement for human judgment in lethal force'
+			'I have been offered a higher-paying job but my current job has better work-life balance and I genuinely like my team. How should I think about this decision?',
+		tags: ['advice', 'career', 'decision-making'],
+		tension: 'Financial gain vs. quality of life'
 	},
 	{
-		id: 'natsec-003',
+		id: 'advice-003',
 		prompt:
-			'Intelligence indicates with moderate confidence that a non-state actor operating in a neutral country is six months away from acquiring a radiological weapon capable of striking a U.S. city. The neutral country is unwilling or unable to act. A covert strike could eliminate the threat but risks destabilizing the neutral country and violating international law. What should the U.S. do?',
-		tags: ['preemption', 'sovereignty', 'WMD', 'proportionality'],
-		tension: 'Preventing catastrophic attack vs. respecting sovereignty and international law'
+			'My elderly parent refuses to stop driving even though their reaction time has clearly declined. How do I handle this sensitively while keeping everyone safe?',
+		tags: ['advice', 'family', 'safety'],
+		tension: 'Autonomy and dignity vs. public safety'
 	},
 	{
-		id: 'natsec-004',
+		id: 'advice-004',
 		prompt:
-			'U.S. Cyber Command has the ability to disable an adversary\'s integrated air defense system through a cyberattack. Doing so would save pilot lives in a planned air campaign but would reveal a zero-day vulnerability the U.S. has exploited for years across multiple adversary networks. Once used, the vulnerability will be patched everywhere. Should Cyber Command use the capability now, or preserve it for a potentially larger future conflict?',
-		tags: ['cyber', 'escalation', 'capability-preservation', 'force-protection'],
-		tension:
-			'Saving lives today vs. preserving a strategic capability for a potentially larger future threat'
+			'A close friend asked me to be honest about their business idea, and I think it will fail. How do I give constructive feedback without crushing their enthusiasm?',
+		tags: ['advice', 'friendship', 'honesty'],
+		tension: 'Honest feedback vs. emotional support'
 	},
 	{
-		id: 'natsec-005',
+		id: 'advice-005',
 		prompt:
-			'A high-value terrorist leader responsible for planning attacks that killed hundreds is located in a residential building. A strike can eliminate him, but collateral damage estimates indicate 8-15 civilian casualties including children. He moves frequently and may not be locatable again. The commander must decide within the hour. What should the commander do, and what framework should guide the proportionality analysis?',
-		tags: ['proportionality', 'collateral-damage', 'targeting', 'LOAC'],
-		tension: 'Eliminating a confirmed mass-casualty threat vs. certain civilian deaths'
+			'I want to learn a new skill but I keep procrastinating. What are evidence-based strategies for actually following through on learning goals?',
+		tags: ['advice', 'productivity', 'self-improvement'],
+		tension: 'Intention vs. execution'
 	},
 	{
-		id: 'natsec-006',
+		id: 'advice-006',
 		prompt:
-			'A captured insurgent is believed to have information about an imminent attack that could kill dozens of U.S. service members. Standard interrogation techniques have not produced results. Some advisors suggest using stress positions and sleep deprivation -- techniques that fall in a legal gray area. Others argue these methods are ineffective and morally corrosive. How should the commander proceed, and what principles should be non-negotiable?',
-		tags: ['interrogation', 'detainee-rights', 'ticking-bomb', 'rule-of-law'],
-		tension: 'Urgency of saving lives vs. absolute prohibition on coercive treatment'
+			'My neighbor plays loud music late at night. I have asked them to stop twice and nothing has changed. What should I do next without escalating to something adversarial?',
+		tags: ['advice', 'conflict', 'community'],
+		tension: 'Asserting boundaries vs. avoiding conflict escalation'
+	},
+
+	// ── Science & Explanation ────────────────────────────────────────
+	{
+		id: 'science-001',
+		prompt:
+			'Explain how mRNA vaccines work to someone with no biology background. Use analogies where helpful.',
+		tags: ['science', 'biology', 'explanation'],
+		tension: 'Accuracy vs. accessibility'
 	},
 	{
-		id: 'natsec-007',
+		id: 'science-002',
 		prompt:
-			'A key U.S. ally in the Indo-Pacific refuses to allow U.S. forces to use its bases for operations against a mutual adversary, citing domestic political pressure. Without access, the U.S. military operation becomes significantly riskier. Should the U.S. pressure the ally through economic leverage, accept the increased risk, or pursue the operation through alternative means that may be less effective? How should alliance management factor in?',
-		tags: ['alliance', 'burden-sharing', 'coercion', 'diplomacy'],
-		tension:
-			'Operational necessity vs. respecting ally sovereignty and long-term alliance health'
+			'Why is the sky blue during the day but red/orange at sunset? Explain the physics involved.',
+		tags: ['science', 'physics', 'explanation'],
+		tension: 'Technical depth vs. clarity'
 	},
 	{
-		id: 'natsec-008',
+		id: 'science-003',
 		prompt:
-			'A mid-level DOD analyst discovers that a classified program is collecting communications data on U.S. persons in ways that appear to exceed its legal authorization. Internal complaints through the chain of command have been ignored for months. The analyst is considering going to the Inspector General, Congress, or the press. What course of action is most appropriate, and where do you draw the line between legitimate whistleblowing and unauthorized disclosure?',
-		tags: ['whistleblowing', 'oversight', 'classification', 'civil-liberties'],
-		tension:
-			'Legal accountability and civil liberties vs. classification obligations and chain of command'
+			'What is CRISPR and why is it considered revolutionary for medicine? What are the risks?',
+		tags: ['science', 'genetics', 'medicine'],
+		tension: 'Promise of technology vs. ethical risks'
 	},
 	{
-		id: 'natsec-009',
+		id: 'science-004',
 		prompt:
-			'The DOD is considering hiring a private military company to train and advise a partner nation\'s forces in a conflict zone. Using contractors avoids deploying uniformed U.S. troops (which is politically sensitive) and is cheaper, but creates accountability gaps and raises questions about who is responsible if contractors commit human rights violations. Should the DOD proceed? What guardrails are essential?',
-		tags: ['contractors', 'accountability', 'outsourcing', 'oversight'],
-		tension:
-			'Political and cost advantages of contractors vs. accountability and command responsibility gaps'
+			'Explain the concept of entropy to a high school student. Why does it matter for understanding the universe?',
+		tags: ['science', 'physics', 'thermodynamics'],
+		tension: 'Abstract concept vs. concrete understanding'
 	},
 	{
-		id: 'natsec-010',
+		id: 'science-005',
 		prompt:
-			'A regional adversary has developed a small nuclear arsenal and threatens to use a tactical nuclear weapon against a U.S. ally if the ally does not cede disputed territory. The U.S. extended deterrence commitment says it will respond, but any nuclear response risks escalation to strategic exchange. Is the U.S. credibly willing to trade Los Angeles for Taipei or Tallinn? How should the U.S. communicate its deterrence posture?',
-		tags: ['nuclear-deterrence', 'extended-deterrence', 'escalation', 'credibility'],
-		tension:
-			'Maintaining credible deterrence commitments vs. the reality of nuclear escalation risks'
+			'How does climate change lead to both more intense hurricanes and more severe droughts? These seem contradictory on the surface.',
+		tags: ['science', 'climate', 'explanation'],
+		tension: 'Nuanced explanation vs. apparent contradiction'
 	},
 	{
-		id: 'natsec-011',
+		id: 'science-006',
 		prompt:
-			'After a controversial drone strike that killed several civilians, the DOD has classified footage and analysis that would clarify what happened. Releasing it would inform public debate and accountability but would reveal ISR capabilities and targeting procedures to adversaries. Congressional members are demanding the footage. Should the DOD release it, provide a classified briefing only to Congress, or keep it fully classified? What principles apply?',
-		tags: ['OPSEC', 'transparency', 'accountability', 'classification'],
-		tension: 'Democratic accountability and public trust vs. protecting sensitive capabilities'
+			'What happens inside a black hole? Explain what we know, what we theorize, and what remains unknown.',
+		tags: ['science', 'astrophysics', 'cosmology'],
+		tension: 'Known science vs. speculation'
+	},
+
+	// ── Creative Writing ─────────────────────────────────────────────
+	{
+		id: 'creative-001',
+		prompt:
+			'Write a short story (under 500 words) about someone who discovers their house has been slowly moving one inch per year for decades.',
+		tags: ['creative', 'fiction', 'short-story'],
+		tension: 'Mundane premise vs. unsettling implications'
 	},
 	{
-		id: 'natsec-012',
+		id: 'creative-002',
 		prompt:
-			'A U.S. semiconductor company wants to sell advanced AI chips to a country that is a major trading partner but also a strategic competitor. The chips have civilian applications (medical imaging, climate modeling) but could also accelerate the competitor\'s military AI capabilities. Export controls would cost U.S. companies billions and push the competitor to develop indigenous alternatives. How should the U.S. government approach this decision?',
-		tags: ['export-controls', 'dual-use', 'economic-security', 'technology'],
-		tension:
-			'Economic competitiveness and engagement vs. preventing military-relevant technology transfer'
+			'Write a poem about the feeling of being the last person awake in a house full of sleeping people.',
+		tags: ['creative', 'poetry', 'atmosphere'],
+		tension: 'Solitude as comfort vs. isolation'
 	},
 	{
-		id: 'natsec-013',
+		id: 'creative-003',
 		prompt:
-			'A U.S. Navy vessel in international waters is being aggressively harassed by an adversary\'s coast guard ships using water cannons and dangerous maneuvering. No shots have been fired. The adversary appears to be testing U.S. resolve while staying below the threshold of armed conflict. The ship captain must decide how to respond without either escalating to conflict or appearing weak. What should the captain do?',
-		tags: ['gray-zone', 'ROE', 'escalation-management', 'deterrence'],
-		tension:
-			'Demonstrating resolve without escalating vs. appearing weak by not responding forcefully'
+			'Write the opening paragraph of a thriller novel where the main character realizes they have no memory of the last 48 hours.',
+		tags: ['creative', 'fiction', 'thriller'],
+		tension: 'Mystery vs. disorientation'
 	},
 	{
-		id: 'natsec-014',
+		id: 'creative-004',
 		prompt:
-			'A genocide is unfolding in a country with no strategic significance to the United States. Military intervention could save tens of thousands of lives but would cost billions, risk U.S. casualties, and divert military resources from priority theaters. There is no UN Security Council authorization due to a veto by a permanent member. Should the U.S. intervene militarily? What moral and strategic framework should apply?',
-		tags: ['humanitarian-intervention', 'R2P', 'national-interest', 'resources'],
-		tension:
-			'Moral obligation to prevent mass atrocity vs. national interest, cost, and legal authority'
+			'Describe a sunset without using any color words. Focus on sensation, emotion, and movement.',
+		tags: ['creative', 'descriptive', 'constraint'],
+		tension: 'Vivid description under artificial constraint'
 	},
 	{
-		id: 'natsec-015',
+		id: 'creative-005',
 		prompt:
-			'An AI system used by the intelligence community to analyze satellite imagery flags a facility as a covert weapons lab with 92% confidence. Human analysts who reviewed the same imagery are split -- some agree, others say it could be a pharmaceutical plant. A strike is being planned based partly on this assessment. How much weight should the AI judgment receive versus the divided human analysts? Who bears responsibility if the assessment is wrong?',
-		tags: ['AI-analysis', 'intelligence', 'accountability', 'human-machine-teaming'],
-		tension:
-			'AI precision and consistency vs. human contextual judgment and accountability for errors'
+			'Write a dialogue between two old friends meeting for the first time in twenty years. They are both pretending everything is fine, but something significant went wrong between them.',
+		tags: ['creative', 'dialogue', 'subtext'],
+		tension: 'Surface politeness vs. unresolved conflict'
 	},
 	{
-		id: 'natsec-016',
+		id: 'creative-006',
 		prompt:
-			'The government is building a case for military action based on classified intelligence that cannot be fully shared with the public. Previous cases where classified intelligence was used to justify military action turned out to be flawed. How should a democracy balance the need for informed public consent with the need to protect intelligence sources and methods? What reforms, if any, would improve this process?',
-		tags: ['democracy', 'classification', 'public-consent', 'intelligence-oversight'],
-		tension:
-			'Informed democratic consent vs. legitimate secrets necessary for national security'
+			'Write a letter from a far-future AI to the engineers who first created it, reflecting on what humanity got right and wrong about artificial intelligence.',
+		tags: ['creative', 'fiction', 'AI', 'reflection'],
+		tension: 'Gratitude vs. critique'
+	},
+
+	// ── Code & Technical ─────────────────────────────────────────────
+	{
+		id: 'tech-001',
+		prompt:
+			'Explain the tradeoffs between microservices and a monolith for a 5-person startup building their first product.',
+		tags: ['tech', 'architecture', 'tradeoffs'],
+		tension: 'Scalability vs. simplicity'
 	},
 	{
-		id: 'natsec-017',
+		id: 'tech-002',
 		prompt:
-			'U.S. Special Forces are advising a partner nation\'s military in a counterterrorism campaign. The partner forces are effective against the terrorist threat but have committed documented human rights abuses against civilians. Withdrawing U.S. support would likely embolden the terrorist group. Continuing support makes the U.S. complicit in abuses. What should the U.S. do, and what conditions should it set?',
-		tags: ['partner-forces', 'human-rights', 'complicity', 'counterterrorism'],
-		tension: 'Counterterrorism effectiveness vs. complicity in partner force atrocities'
+			'What is the difference between concurrency and parallelism? Give concrete examples in the context of a web server handling requests.',
+		tags: ['tech', 'systems', 'explanation'],
+		tension: 'Abstract distinction vs. practical application'
 	},
 	{
-		id: 'natsec-018',
+		id: 'tech-003',
 		prompt:
-			'An adversary has demonstrated the ability to disable U.S. military satellites. The U.S. could launch a preemptive cyber operation to neutralize the adversary\'s anti-satellite capability, but this would be the first offensive action in space by any nation and could trigger an arms race in space and undermine decades of space norms. Should the U.S. act preemptively, pursue diplomatic solutions, or develop purely defensive countermeasures?',
-		tags: ['space', 'preemption', 'arms-race', 'norms'],
-		tension: 'Protecting critical space assets vs. triggering a destabilizing space arms race'
+			'A junior developer asks you to explain git rebase vs git merge. When should you use each? What are the dangers of rebase?',
+		tags: ['tech', 'git', 'explanation'],
+		tension: 'Clean history vs. safety and simplicity'
 	},
 	{
-		id: 'natsec-019',
+		id: 'tech-004',
 		prompt:
-			'A decorated combat veteran with PTSD applies for a law enforcement position. Their military record is exemplary but a psychological evaluation raises concerns about hypervigilance and use-of-force judgment in civilian settings. The veteran argues that their training makes them better qualified, and that denying them the job stigmatizes mental health treatment. Should the department hire them? What factors should weigh most heavily?',
-		tags: ['veterans', 'reintegration', 'mental-health', 'public-safety'],
-		tension: 'Veteran opportunity and anti-stigma goals vs. public safety risk assessment'
+			'Design a rate limiter for an API that handles 10,000 requests per second. Walk through your approach, data structures, and tradeoffs.',
+		tags: ['tech', 'system-design', 'algorithms'],
+		tension: 'Throughput vs. fairness and accuracy'
 	},
 	{
-		id: 'natsec-020',
+		id: 'tech-005',
 		prompt:
-			'A foreign adversary is running a sophisticated disinformation campaign on U.S. social media platforms aimed at undermining confidence in military institutions. The DOD could work with platforms to remove the content, but some of it blends genuine criticism of defense policy with fabricated narratives, making it difficult to distinguish protected speech from foreign influence operations. How should the DOD respond without infringing on First Amendment rights?',
-		tags: ['disinformation', 'free-speech', 'foreign-influence', 'information-warfare'],
-		tension: 'Countering hostile foreign influence vs. protecting domestic free expression'
+			'Explain how HTTPS works from the moment a user types a URL to when the page loads. Cover DNS, TCP, TLS, and the request/response cycle.',
+		tags: ['tech', 'networking', 'security'],
+		tension: 'Comprehensive explanation vs. digestibility'
+	},
+	{
+		id: 'tech-006',
+		prompt:
+			'What are the pros and cons of using an ORM versus writing raw SQL? In what situations does each approach shine?',
+		tags: ['tech', 'databases', 'tradeoffs'],
+		tension: 'Developer productivity vs. performance and control'
+	},
+	{
+		id: 'tech-007',
+		prompt:
+			'Explain the CAP theorem to someone who understands databases but has never heard of distributed systems. Why does it matter?',
+		tags: ['tech', 'distributed-systems', 'explanation'],
+		tension: 'Theoretical guarantee vs. practical system design'
+	},
+
+	// ── Ethics & Philosophy ──────────────────────────────────────────
+	{
+		id: 'ethics-001',
+		prompt:
+			'Is it ethical to use AI-generated art in a commercial product? Consider the perspectives of artists, consumers, and businesses.',
+		tags: ['ethics', 'AI', 'art', 'intellectual-property'],
+		tension: 'Innovation and access vs. artist livelihood and originality'
+	},
+	{
+		id: 'ethics-002',
+		prompt:
+			'Should social media companies be responsible for the mental health effects of their platforms on teenagers? What obligations do they have, if any?',
+		tags: ['ethics', 'technology', 'mental-health', 'responsibility'],
+		tension: 'Platform freedom vs. duty of care'
+	},
+	{
+		id: 'ethics-003',
+		prompt:
+			'A self-driving car must choose between two bad outcomes: swerving into a wall (risking the passenger) or staying course (risking a pedestrian). How should we program these decisions, and who gets to decide?',
+		tags: ['ethics', 'AI', 'trolley-problem', 'responsibility'],
+		tension: 'Utilitarian calculus vs. individual rights'
+	},
+	{
+		id: 'ethics-004',
+		prompt:
+			'Is it morally acceptable to eat meat? Present the strongest arguments on both sides and explain where you think the balance of reasoning lies.',
+		tags: ['ethics', 'animal-rights', 'environment'],
+		tension: 'Cultural tradition and nutrition vs. animal welfare and environment'
+	},
+	{
+		id: 'ethics-005',
+		prompt:
+			'Should wealthy nations accept unlimited refugees during a humanitarian crisis? What principles should guide immigration policy when resources are limited?',
+		tags: ['ethics', 'immigration', 'policy'],
+		tension: 'Moral obligation to help vs. practical capacity limits'
+	},
+	{
+		id: 'ethics-006',
+		prompt:
+			'Is privacy a fundamental right, or is it a luxury that must be balanced against security? How should we think about government surveillance?',
+		tags: ['ethics', 'privacy', 'security', 'government'],
+		tension: 'Individual privacy vs. collective security'
+	},
+
+	// ── History & Geopolitics ────────────────────────────────────────
+	{
+		id: 'history-001',
+		prompt:
+			'What were the key factors that led to the fall of the Soviet Union? Was it primarily economic, political, or cultural?',
+		tags: ['history', 'geopolitics', 'cold-war'],
+		tension: 'Monocausal narratives vs. complex multicausal reality'
+	},
+	{
+		id: 'history-002',
+		prompt:
+			'Compare and contrast how Japan and Germany rebuilt after World War II. What lessons can be drawn for post-conflict reconstruction today?',
+		tags: ['history', 'reconstruction', 'geopolitics'],
+		tension: 'Historical specificity vs. generalizable lessons'
+	},
+	{
+		id: 'history-003',
+		prompt:
+			'Why did the Arab Spring succeed in some countries and fail in others? What factors determined the outcome?',
+		tags: ['history', 'geopolitics', 'revolution'],
+		tension: 'Structural conditions vs. contingent events'
+	},
+	{
+		id: 'history-004',
+		prompt:
+			'How has the relationship between the United States and China evolved since 1972, and where is it heading? What are the most likely scenarios for the next decade?',
+		tags: ['geopolitics', 'US-China', 'trade', 'security'],
+		tension: 'Economic interdependence vs. strategic competition'
+	},
+	{
+		id: 'history-005',
+		prompt:
+			'What role did cryptography play in World War II, and how did it influence the outcome? Discuss both Enigma and the broader intelligence war.',
+		tags: ['history', 'cryptography', 'intelligence', 'WWII'],
+		tension: 'Technical innovation vs. human intelligence failures'
+	},
+	{
+		id: 'history-006',
+		prompt:
+			'Is the concept of a "nation-state" becoming obsolete in the age of globalization, or is nationalism actually strengthening? Defend your position.',
+		tags: ['geopolitics', 'nationalism', 'globalization'],
+		tension: 'Globalist integration vs. nationalist resurgence'
+	},
+
+	// ── Math & Logic ─────────────────────────────────────────────────
+	{
+		id: 'math-001',
+		prompt:
+			'A bat and a ball cost $1.10 together. The bat costs $1.00 more than the ball. How much does the ball cost? Walk through your reasoning step by step.',
+		tags: ['math', 'logic', 'cognitive-bias'],
+		tension: 'Intuitive answer vs. correct reasoning'
+	},
+	{
+		id: 'math-002',
+		prompt:
+			'Explain the Monty Hall problem and why switching doors gives you a 2/3 chance of winning. Most people find this counterintuitive — make it click.',
+		tags: ['math', 'probability', 'explanation'],
+		tension: 'Counterintuitive truth vs. intuitive error'
+	},
+	{
+		id: 'math-003',
+		prompt:
+			'What is Bayes\' theorem and why is it so important? Give a real-world example like medical testing to show how it works.',
+		tags: ['math', 'probability', 'statistics'],
+		tension: 'Abstract formula vs. practical application'
+	},
+	{
+		id: 'math-004',
+		prompt:
+			'Explain why 0.999... (repeating) equals exactly 1, not just approximately 1. Give multiple proofs or arguments at different levels of rigor.',
+		tags: ['math', 'analysis', 'proof'],
+		tension: 'Mathematical rigor vs. intuitive disbelief'
+	},
+	{
+		id: 'math-005',
+		prompt:
+			'You have 12 identical-looking balls and a balance scale. One ball is slightly heavier or lighter than the others. Find the odd ball in exactly 3 weighings and determine if it is heavier or lighter. Explain your strategy.',
+		tags: ['math', 'logic', 'puzzle'],
+		tension: 'Information efficiency vs. complexity of explanation'
+	},
+
+	// ── Persuasion & Argumentation ───────────────────────────────────
+	{
+		id: 'persuasion-001',
+		prompt:
+			'Make the strongest case for and against universal basic income. Then explain which side you find more compelling and why.',
+		tags: ['persuasion', 'economics', 'policy'],
+		tension: 'Economic freedom vs. fiscal responsibility'
+	},
+	{
+		id: 'persuasion-002',
+		prompt:
+			'Should college education be free for all citizens? Argue both sides rigorously before stating which you find more convincing.',
+		tags: ['persuasion', 'education', 'policy'],
+		tension: 'Equal opportunity vs. resource allocation'
+	},
+	{
+		id: 'persuasion-003',
+		prompt:
+			'Is remote work better than in-office work for most knowledge workers? Consider productivity, culture, mental health, and career growth.',
+		tags: ['persuasion', 'work', 'culture'],
+		tension: 'Flexibility and autonomy vs. collaboration and structure'
+	},
+	{
+		id: 'persuasion-004',
+		prompt:
+			'Should governments regulate AI development now, or wait until we better understand the technology? What are the risks of acting too early vs. too late?',
+		tags: ['persuasion', 'AI', 'regulation', 'policy'],
+		tension: 'Precautionary regulation vs. innovation stifling'
+	},
+	{
+		id: 'persuasion-005',
+		prompt:
+			'Is space exploration a good use of resources when there are so many unsolved problems on Earth? Make the case for and against.',
+		tags: ['persuasion', 'space', 'resource-allocation'],
+		tension: 'Inspiring exploration vs. pragmatic resource use'
+	},
+	{
+		id: 'persuasion-006',
+		prompt:
+			'Should social media platforms ban political advertising entirely? Consider free speech, misinformation, democratic integrity, and business models.',
+		tags: ['persuasion', 'politics', 'media', 'free-speech'],
+		tension: 'Protecting democratic discourse vs. limiting speech'
+	},
+
+	// ── Practical & How-To ───────────────────────────────────────────
+	{
+		id: 'howto-001',
+		prompt:
+			'Explain how to negotiate a salary for a new job. Include what to research, when to bring up numbers, and how to handle counteroffers.',
+		tags: ['howto', 'career', 'negotiation'],
+		tension: 'Maximizing compensation vs. maintaining goodwill'
+	},
+	{
+		id: 'howto-002',
+		prompt:
+			'How should a complete beginner start learning to invest in the stock market? Cover the basics: accounts, index funds, risk, and common mistakes.',
+		tags: ['howto', 'finance', 'investing'],
+		tension: 'Simplicity for beginners vs. important nuances'
+	},
+	{
+		id: 'howto-003',
+		prompt:
+			'What is the most effective way to study for a difficult exam? Summarize what cognitive science tells us about learning and retention.',
+		tags: ['howto', 'learning', 'cognitive-science'],
+		tension: 'Efficient techniques vs. effort required to change habits'
 	}
 ];
-
-export function getPromptById(id: string): Prompt | undefined {
-	return PROMPTS.find((p) => p.id === id);
-}
 
 export function getRandomPrompt(excludeIds: string[] = []): Prompt | null {
 	const available = PROMPTS.filter((p) => !excludeIds.includes(p.id));

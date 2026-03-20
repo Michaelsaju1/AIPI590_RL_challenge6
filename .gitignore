@@ -5,3 +5,6 @@ build
 __pycache__
 *.pyc
 .DS_Store
+preferences.db
+preferences.db-wal
+preferences.db-shm

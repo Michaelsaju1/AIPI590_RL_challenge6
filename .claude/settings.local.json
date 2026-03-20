@@ -11,7 +11,13 @@
       "Bash(cd /c/Users/Micha/preference-collector && npm install 2>&1)",
       "Bash(npm install:*)",
       "Bash(cmd.exe:*)",
-      "Bash(cd /c/Users/Micha/preference-collector && git init 2>&1)"
+      "Bash(cd /c/Users/Micha/preference-collector && git init 2>&1)",
+      "Bash(bun add:*)",
+      "Bash(bun install:*)",
+      "Bash(bun run:*)",
+      "Bash(npx svelte-check:*)",
+      "Bash(npx vite:*)",
+      "Bash(bun remove:*)"
     ]
   }
 }

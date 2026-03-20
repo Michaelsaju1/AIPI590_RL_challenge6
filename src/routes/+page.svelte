@@ -1,108 +1,209 @@
 <script lang="ts">
-	import { PROMPTS, PROMPT_CATEGORY, getPromptById, getRandomPrompt } from '$lib/prompts';
+	import { getRandomPrompt } from '$lib/prompts';
 	import type { Prompt, ResponseMeta, PreferenceRecord } from '$lib/types';
 
-	// --- State ---
-	let preferences: PreferenceRecord[] = $state([]);
+	// ── Constants ────────────────────────────────────────────────────
+	const MODEL = 'claude-haiku-4-5';
+	const MAX_TOKENS = 512;
+	const LOW_TEMPS = [0.3, 0.4, 0.5];
+	const HIGH_TEMPS = [0.7, 0.8, 0.9];
+
+	// ── State ────────────────────────────────────────────────────────
+	let currentPrompt: Prompt | null = $state(null);
 	let responseA: ResponseMeta | null = $state(null);
 	let responseB: ResponseMeta | null = $state(null);
-	let currentPrompt = $state('');
-	let currentPromptMeta: Prompt | null = $state(null);
-	let generationDone = $state(false);
+	let streamingTextA = $state('');
+	let streamingTextB = $state('');
+	let tempA = $state(0);
+	let tempB = $state(0);
 	let generating = $state(false);
-	let generatingLabel = $state('');
-	let usedPromptIds: string[] = $state([]);
+	let saving = $state(false);
 	let errorMessage = $state('');
+	let sessionCount = $state(0);
+	let usedPromptIds: string[] = $state([]);
 
-	// Sidebar settings
-	let model = $state('claude-haiku-4-5');
-	let temperature = $state(0.9);
-	let maxTokens = $state(1024);
+	// ── Pre-generation state ────────────────────────────────────────
+	let pregenPrompt: Prompt | null = null;
+	let pregenA: ResponseMeta | null = null;
+	let pregenB: ResponseMeta | null = null;
+	let pregenTempA = 0;
+	let pregenTempB = 0;
+	let pregenPromise: Promise<void> | null = null;
 
-	// Prompt source
-	let promptSource: 'curated' | 'random' | 'custom' = $state('curated');
-	let selectedPromptId = $state(PROMPTS[0].id);
-	let customPromptText = $state('');
+	// ── Helpers ──────────────────────────────────────────────────────
+	function pickRandom<T>(arr: T[]): T {
+		return arr[Math.floor(Math.random() * arr.length)];
+	}
 
-	// UI toggles
-	let showMetaA = $state(false);
-	let showMetaB = $state(false);
-	let showHistory = $state(false);
-	let showPromptDetails = $state(false);
-	let sidebarOpen = $state(true);
+	function assignTemperatures(): [number, number] {
+		const low = pickRandom(LOW_TEMPS);
+		const high = pickRandom(HIGH_TEMPS);
+		if (Math.random() < 0.5) return [low, high];
+		return [high, low];
+	}
 
-	// --- Derived ---
-	let activePromptText = $derived.by(() => {
-		if (promptSource === 'curated') {
-			const p = getPromptById(selectedPromptId);
-			return p?.prompt ?? '';
-		}
-		if (promptSource === 'random') {
-			return currentPrompt;
-		}
-		return customPromptText;
-	});
+	// ── Init ─────────────────────────────────────────────────────────
+	currentPrompt = getRandomPrompt();
 
-	let activePromptMeta = $derived.by(() => {
-		if (promptSource === 'curated') {
-			return getPromptById(selectedPromptId) ?? null;
-		}
-		if (promptSource === 'random') {
-			return currentPromptMeta;
-		}
-		return null;
-	});
-
-	let sessionTies = $derived(preferences.filter((r) => r.is_tie).length);
-	let promptsRemaining = $derived(PROMPTS.length - usedPromptIds.length);
-
-	// --- Actions ---
-	async function fetchResponse(prompt: string): Promise<ResponseMeta> {
+	// ── Streaming API call ───────────────────────────────────────────
+	async function fetchResponseStreaming(
+		prompt: string,
+		temperature: number,
+		onDelta: (fullText: string) => void
+	): Promise<ResponseMeta> {
 		const res = await fetch('/api/generate', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ prompt, model, temperature, max_tokens: maxTokens })
+			body: JSON.stringify({ prompt, model: MODEL, temperature, max_tokens: MAX_TOKENS })
+		});
+
+		if (!res.ok) {
+			const text = await res.text();
+			let errorMsg = `HTTP ${res.status}`;
+			try {
+				const data = JSON.parse(text);
+				errorMsg = data.error || errorMsg;
+			} catch {
+				// not JSON, use status
+			}
+			throw new Error(errorMsg);
+		}
+
+		const reader = res.body!.getReader();
+		const decoder = new TextDecoder();
+		let buffer = '';
+		let fullText = '';
+		let metadata: Record<string, unknown> | null = null;
+
+		while (true) {
+			const { done, value } = await reader.read();
+			if (done) break;
+
+			buffer += decoder.decode(value, { stream: true });
+			const lines = buffer.split('\n');
+			buffer = lines.pop()!;
+
+			for (const line of lines) {
+				if (!line.startsWith('data: ')) continue;
+				const data = JSON.parse(line.slice(6));
+
+				if (data.type === 'delta') {
+					fullText += data.text;
+					onDelta(fullText);
+				} else if (data.type === 'done') {
+					metadata = data;
+				} else if (data.type === 'error') {
+					throw new Error(data.error);
+				}
+			}
+		}
+
+		if (!metadata) throw new Error('Stream ended without metadata');
+
+		return {
+			text: fullText,
+			model: metadata.model as string,
+			temperature: metadata.temperature as number,
+			input_tokens: metadata.input_tokens as number,
+			output_tokens: metadata.output_tokens as number,
+			stop_reason: metadata.stop_reason as string,
+			latency_s: metadata.latency_s as number,
+			response_id: metadata.response_id as string
+		};
+	}
+
+	async function savePreference(record: PreferenceRecord): Promise<void> {
+		const res = await fetch('/api/save-preference', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(record)
 		});
 		if (!res.ok) {
 			const data = await res.json();
-			throw new Error(data.error || `HTTP ${res.status}`);
+			throw new Error(data.error || `Failed to save (HTTP ${res.status})`);
 		}
-		return res.json();
 	}
 
+	// ── Pre-generation ──────────────────────────────────────────────
+	function startPreGeneration() {
+		const excludeIds = [...usedPromptIds, currentPrompt?.id ?? ''];
+		let next = getRandomPrompt(excludeIds);
+		if (!next) {
+			// All prompts used, reset and pick any
+			next = getRandomPrompt([currentPrompt?.id ?? '']);
+		}
+		if (!next) return;
+
+		pregenPrompt = next;
+		pregenA = null;
+		pregenB = null;
+		const [tA, tB] = assignTemperatures();
+		pregenTempA = tA;
+		pregenTempB = tB;
+
+		pregenPromise = (async () => {
+			try {
+				const [a, b] = await Promise.all([
+					fetchResponseStreaming(next!.prompt, tA, () => {}),
+					fetchResponseStreaming(next!.prompt, tB, () => {})
+				]);
+				pregenA = a;
+				pregenB = b;
+			} catch {
+				// Pre-generation failed silently; will generate normally
+				pregenPrompt = null;
+				pregenA = null;
+				pregenB = null;
+			}
+		})();
+	}
+
+	// ── Actions ──────────────────────────────────────────────────────
 	async function generatePair() {
-		if (!activePromptText) return;
+		if (!currentPrompt) return;
 		generating = true;
 		errorMessage = '';
+		responseA = null;
+		responseB = null;
+		streamingTextA = '';
+		streamingTextB = '';
+
+		const [tA, tB] = assignTemperatures();
+		tempA = tA;
+		tempB = tB;
+
 		try {
-			generatingLabel = 'Generating Response A...';
-			responseA = await fetchResponse(activePromptText);
-			generatingLabel = 'Generating Response B...';
-			responseB = await fetchResponse(activePromptText);
-			currentPrompt = activePromptText;
-			currentPromptMeta = activePromptMeta;
-			generationDone = true;
+			const [a, b] = await Promise.all([
+				fetchResponseStreaming(currentPrompt.prompt, tA, (text) => {
+					streamingTextA = text;
+				}),
+				fetchResponseStreaming(currentPrompt.prompt, tB, (text) => {
+					streamingTextB = text;
+				})
+			]);
+			responseA = a;
+			responseB = b;
+
+			// Start pre-generating the next pair while user reads
+			startPreGeneration();
 		} catch (err: unknown) {
 			errorMessage = err instanceof Error ? err.message : 'Unknown error';
 		} finally {
 			generating = false;
-			generatingLabel = '';
 		}
 	}
 
-	function selectPreference(pref: 'A' | 'B' | 'tie') {
-		if (!responseA || !responseB) return;
+	async function selectPreference(pref: 'A' | 'B' | 'tie') {
+		if (!responseA || !responseB || !currentPrompt) return;
+
+		saving = true;
+		errorMessage = '';
 
 		const now = new Date().toISOString();
 		let chosen: string, rejected: string;
 		let chosenMeta: ResponseMeta, rejectedMeta: ResponseMeta;
 
-		if (pref === 'A') {
-			chosen = responseA.text;
-			rejected = responseB.text;
-			chosenMeta = responseA;
-			rejectedMeta = responseB;
-		} else if (pref === 'B') {
+		if (pref === 'B') {
 			chosen = responseB.text;
 			rejected = responseA.text;
 			chosenMeta = responseB;
@@ -116,14 +217,14 @@
 
 		const record: PreferenceRecord = {
 			timestamp: now,
-			prompt: currentPrompt,
+			prompt: currentPrompt.prompt,
 			chosen,
 			rejected,
 			preference: pref,
 			is_tie: pref === 'tie',
-			prompt_category: PROMPT_CATEGORY,
-			prompt_id: currentPromptMeta?.id ?? null,
-			prompt_tags: currentPromptMeta?.tags ?? null,
+			prompt_category: 'general',
+			prompt_id: currentPrompt.id,
+			prompt_tags: currentPrompt.tags,
 			chosen_metadata: {
 				model: chosenMeta.model,
 				temperature: chosenMeta.temperature,
@@ -144,58 +245,83 @@
 			}
 		};
 
-		preferences = [...preferences, record];
-
-		if (currentPromptMeta && !usedPromptIds.includes(currentPromptMeta.id)) {
-			usedPromptIds = [...usedPromptIds, currentPromptMeta.id];
+		try {
+			await savePreference(record);
+			sessionCount++;
+			if (!usedPromptIds.includes(currentPrompt.id)) {
+				usedPromptIds = [...usedPromptIds, currentPrompt.id];
+			}
+			await advanceToNewPrompt();
+		} catch (err: unknown) {
+			errorMessage = err instanceof Error ? err.message : 'Failed to save preference';
+		} finally {
+			saving = false;
 		}
-
-		clearState();
 	}
 
-	function clearState() {
+	async function advanceToNewPrompt() {
 		responseA = null;
 		responseB = null;
-		generationDone = false;
-		currentPrompt = '';
-		currentPromptMeta = null;
+		streamingTextA = '';
+		streamingTextB = '';
 		errorMessage = '';
-	}
 
-	function pickRandomPrompt() {
-		const rp = getRandomPrompt(usedPromptIds);
-		if (rp) {
-			currentPrompt = rp.prompt;
-			currentPromptMeta = rp;
+		// Check if pre-generated pair is ready
+		if (pregenPromise) {
+			await pregenPromise;
+		}
+
+		if (pregenPrompt && pregenA && pregenB) {
+			// Use pre-generated results
+			currentPrompt = pregenPrompt;
+			responseA = pregenA;
+			responseB = pregenB;
+			tempA = pregenTempA;
+			tempB = pregenTempB;
+			streamingTextA = pregenA.text;
+			streamingTextB = pregenB.text;
+
+			// Clear pre-gen state
+			pregenPrompt = null;
+			pregenA = null;
+			pregenB = null;
+			pregenPromise = null;
+
+			// Start pre-generating the next one
+			startPreGeneration();
 		} else {
-			errorMessage = 'All dataset prompts have been used!';
+			// No pre-gen available, pick new prompt
+			const next = getRandomPrompt(usedPromptIds);
+			if (next) {
+				currentPrompt = next;
+			} else {
+				usedPromptIds = [];
+				currentPrompt = getRandomPrompt();
+			}
+			pregenPromise = null;
 		}
 	}
 
-	function downloadJsonl(records: object[], filename: string) {
-		const lines = records.map((r) => JSON.stringify(r));
-		const blob = new Blob([lines.join('\n')], { type: 'application/jsonl' });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = filename;
-		a.click();
-		URL.revokeObjectURL(url);
-	}
+	async function newPrompt() {
+		// Cancel any pre-gen since we're skipping
+		pregenPrompt = null;
+		pregenA = null;
+		pregenB = null;
+		pregenPromise = null;
 
-	function exportFull() {
-		const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-		downloadJsonl(preferences, `preferences_full_${ts}.jsonl`);
-	}
-
-	function exportDpo() {
-		const dpo = preferences.map((r) => ({
-			prompt: r.prompt,
-			chosen: r.chosen,
-			rejected: r.rejected
-		}));
-		const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-		downloadJsonl(dpo, `preferences_dpo_${ts}.jsonl`);
+		const next = getRandomPrompt(usedPromptIds);
+		if (next) {
+			currentPrompt = next;
+		} else {
+			usedPromptIds = [];
+			currentPrompt = getRandomPrompt();
+		}
+		responseA = null;
+		responseB = null;
+		streamingTextA = '';
+		streamingTextB = '';
+		errorMessage = '';
+		await generatePair();
 	}
 </script>
 
@@ -203,234 +329,94 @@
 	<title>Human Preference Collector</title>
 </svelte:head>
 
-<div class="app-layout">
-	<!-- Sidebar -->
-	<aside class="sidebar" class:collapsed={!sidebarOpen}>
-		<button class="sidebar-toggle" onclick={() => (sidebarOpen = !sidebarOpen)}>
-			{sidebarOpen ? '\u2190' : '\u2192'}
-		</button>
-
-		{#if sidebarOpen}
-			<h2>Model</h2>
-			<select bind:value={model}>
-				<option value="claude-haiku-4-5">claude-haiku-4-5</option>
-				<option value="claude-sonnet-4-6">claude-sonnet-4-6</option>
-				<option value="claude-opus-4-6">claude-opus-4-6</option>
-			</select>
-
-			<h2>Generation Settings</h2>
-			<label>
-				Temperature: {temperature.toFixed(2)}
-				<input type="range" min="0" max="2" step="0.05" bind:value={temperature} />
-			</label>
-			<label>
-				Max tokens: {maxTokens}
-				<input type="range" min="128" max="4096" step="128" bind:value={maxTokens} />
-			</label>
-
-			<hr />
-			<h2>Session Stats</h2>
-			<div class="stat">Comparisons: <strong>{preferences.length}</strong></div>
-			<div class="stat">Ties: <strong>{sessionTies}</strong></div>
-			<div class="stat">Prompts remaining: <strong>{promptsRemaining}</strong></div>
-		{/if}
-	</aside>
-
-	<!-- Main Content -->
-	<main class="main-content">
+<div class="container">
+	<header>
 		<h1>Human Preference Collector</h1>
 		<p class="subtitle">
-			Generate paired responses from the same LLM, then select your preference. Data is exported
-			as &#123;prompt, chosen, rejected&#125; pairs for alignment training.
+			Read the prompt, generate two responses, then pick the one you prefer.
+			Your choice is saved automatically.
 		</p>
-
-		<!-- Step 1: Prompt Selection -->
-		<section class="step">
-			<h2>1. Select or enter a prompt</h2>
-			<div class="prompt-source-tabs">
-				<button
-					class:active={promptSource === 'curated'}
-					onclick={() => (promptSource = 'curated')}
-				>
-					From curated dataset
-				</button>
-				<button
-					class:active={promptSource === 'random'}
-					onclick={() => (promptSource = 'random')}
-				>
-					Random from dataset
-				</button>
-				<button
-					class:active={promptSource === 'custom'}
-					onclick={() => (promptSource = 'custom')}
-				>
-					Custom prompt
-				</button>
-			</div>
-
-			{#if promptSource === 'curated'}
-				<select class="prompt-select" bind:value={selectedPromptId}>
-					{#each PROMPTS as p}
-						<option value={p.id}>[{p.id}] {p.prompt.slice(0, 90)}...</option>
-					{/each}
-				</select>
-				<button class="link-btn" onclick={() => (showPromptDetails = !showPromptDetails)}>
-					{showPromptDetails ? 'Hide' : 'Show'} prompt details
-				</button>
-				{#if showPromptDetails && activePromptMeta}
-					<div class="details-box">
-						<p><strong>Tags:</strong> {activePromptMeta.tags.join(', ')}</p>
-						<p><strong>Core tension:</strong> {activePromptMeta.tension}</p>
-						<p>{activePromptMeta.prompt}</p>
-					</div>
-				{/if}
-			{:else if promptSource === 'random'}
-				<button class="btn" onclick={pickRandomPrompt}>Pick random prompt</button>
-				{#if currentPromptMeta}
-					<div class="info-box">
-						<strong>[{currentPromptMeta.id}]</strong>
-						{currentPrompt}
-					</div>
-				{/if}
-			{:else}
-				<textarea
-					class="custom-prompt"
-					placeholder="Type a prompt to compare model responses..."
-					bind:value={customPromptText}
-					rows="4"
-				></textarea>
-			{/if}
-		</section>
-
-		<!-- Step 2: Generate -->
-		<section class="step">
-			<h2>2. Generate responses</h2>
-			<div class="btn-row">
-				<button
-					class="btn primary"
-					disabled={!activePromptText || generationDone || generating}
-					onclick={generatePair}
-				>
-					{generating ? generatingLabel : 'Generate Response Pair'}
-				</button>
-				<button class="btn" onclick={clearState} disabled={generating}>Clear / New Prompt</button>
-			</div>
-			{#if errorMessage}
-				<div class="error-box">{errorMessage}</div>
-			{/if}
-		</section>
-
-		<!-- Step 3: Compare -->
-		{#if generationDone && responseA && responseB}
-			<section class="step">
-				<h2>3. Compare responses</h2>
-				<div class="response-grid">
-					<div class="response-card">
-						<h3>Response A</h3>
-						<div class="response-text">{responseA.text}</div>
-						<button class="link-btn" onclick={() => (showMetaA = !showMetaA)}>
-							{showMetaA ? 'Hide' : 'Show'} metadata
-						</button>
-						{#if showMetaA}
-							<pre class="meta">{JSON.stringify(
-									{
-										model: responseA.model,
-										temperature: responseA.temperature,
-										input_tokens: responseA.input_tokens,
-										output_tokens: responseA.output_tokens,
-										latency_s: responseA.latency_s,
-										stop_reason: responseA.stop_reason
-									},
-									null,
-									2
-								)}</pre>
-						{/if}
-					</div>
-					<div class="response-card">
-						<h3>Response B</h3>
-						<div class="response-text">{responseB.text}</div>
-						<button class="link-btn" onclick={() => (showMetaB = !showMetaB)}>
-							{showMetaB ? 'Hide' : 'Show'} metadata
-						</button>
-						{#if showMetaB}
-							<pre class="meta">{JSON.stringify(
-									{
-										model: responseB.model,
-										temperature: responseB.temperature,
-										input_tokens: responseB.input_tokens,
-										output_tokens: responseB.output_tokens,
-										latency_s: responseB.latency_s,
-										stop_reason: responseB.stop_reason
-									},
-									null,
-									2
-								)}</pre>
-						{/if}
-					</div>
-				</div>
-			</section>
-
-			<!-- Step 4: Preference -->
-			<section class="step">
-				<h2>4. Select your preference</h2>
-				<div class="pref-row">
-					<button class="btn primary" onclick={() => selectPreference('A')}>
-						A is better
-					</button>
-					<button class="btn" onclick={() => selectPreference('tie')}>Tie</button>
-					<button class="btn primary" onclick={() => selectPreference('B')}>
-						B is better
-					</button>
-				</div>
-			</section>
+		{#if sessionCount > 0}
+			<div class="counter">{sessionCount} preference{sessionCount === 1 ? '' : 's'} saved this session</div>
 		{/if}
+	</header>
 
-		<!-- Export -->
-		<hr />
-		<section class="step">
-			<h2>Export Data</h2>
-			{#if preferences.length === 0}
-				<p class="muted">No preferences recorded yet. Complete some comparisons above.</p>
-			{:else}
-				<div class="btn-row">
-					<button class="btn" onclick={exportFull}>
-						Download full records ({preferences.length} entries)
-					</button>
-					<button class="btn" onclick={exportDpo}>
-						Download DPO pairs ({preferences.length} entries)
-					</button>
-				</div>
-			{/if}
+	<!-- Prompt Display -->
+	<section class="prompt-section">
+		<div class="prompt-label">
+			<span class="prompt-id">{currentPrompt?.id}</span>
+			<span class="prompt-tags">
+				{#each currentPrompt?.tags ?? [] as tag}
+					<span class="tag">{tag}</span>
+				{/each}
+			</span>
+		</div>
+		<div class="prompt-text">{currentPrompt?.prompt}</div>
+	</section>
+
+	<!-- Generate / New Prompt -->
+	<section class="actions">
+		<button
+			class="btn primary"
+			disabled={generating || saving || !currentPrompt || (responseA !== null && responseB !== null)}
+			onclick={generatePair}
+		>
+			{generating ? 'Streaming responses...' : 'Generate Response Pair'}
+		</button>
+		<button class="btn" disabled={generating || saving} onclick={newPrompt}>
+			New Prompt
+		</button>
+	</section>
+
+	{#if errorMessage}
+		<div class="error-box">{errorMessage}</div>
+	{/if}
+
+	<!-- Streaming / Final Responses -->
+	{#if generating}
+		<section class="responses">
+			<div class="response-card streaming">
+				<h3>Response A {streamingTextA ? '' : '(waiting...)'}</h3>
+				<div class="response-text">{streamingTextA}<span class="cursor">|</span></div>
+			</div>
+			<div class="response-card streaming">
+				<h3>Response B {streamingTextB ? '' : '(waiting...)'}</h3>
+				<div class="response-text">{streamingTextB}<span class="cursor">|</span></div>
+			</div>
+		</section>
+	{/if}
+
+	{#if !generating && responseA && responseB}
+		<section class="responses">
+			<button
+				class="response-card clickable"
+				disabled={saving}
+				onclick={() => selectPreference('A')}
+			>
+				<h3>Response A</h3>
+				<div class="response-text">{responseA.text}</div>
+			</button>
+
+			<button
+				class="response-card clickable"
+				disabled={saving}
+				onclick={() => selectPreference('B')}
+			>
+				<h3>Response B</h3>
+				<div class="response-text">{responseB.text}</div>
+			</button>
 		</section>
 
-		<!-- History -->
-		{#if preferences.length > 0}
-			<hr />
-			<section class="step">
-				<button class="link-btn" onclick={() => (showHistory = !showHistory)}>
-					{showHistory ? 'Hide' : 'Show'} session history ({preferences.length} comparisons)
-				</button>
-				{#if showHistory}
-					<div class="history">
-						{#each [...preferences].reverse() as rec, i}
-							{@const idx = preferences.length - i}
-							{@const label =
-								rec.preference === 'A'
-									? 'Chose A'
-									: rec.preference === 'B'
-										? 'Chose B'
-										: 'Tie'}
-							<div class="history-item">
-								<strong>#{idx}</strong> | {label} |
-								<code>{rec.prompt_id ?? 'custom'}</code> |
-								{rec.prompt.slice(0, 80)}...
-							</div>
-						{/each}
-					</div>
-				{/if}
-			</section>
+		<div class="tie-row">
+			<button class="btn tie-btn" disabled={saving} onclick={() => selectPreference('tie')}>
+				Both are equal (Tie)
+			</button>
+		</div>
+
+		{#if saving}
+			<div class="saving-indicator">Saving preference...</div>
 		{/if}
-	</main>
+	{/if}
 </div>
 
 <style>
@@ -442,145 +428,78 @@
 		color: #e0e0e0;
 	}
 
-	.app-layout {
-		display: flex;
-		min-height: 100vh;
+	.container {
+		max-width: 1100px;
+		margin: 0 auto;
+		padding: 2rem 1.5rem;
 	}
 
-	/* Sidebar */
-	.sidebar {
-		width: 280px;
-		background: #1a1d27;
-		padding: 1rem;
-		border-right: 1px solid #2d3040;
-		flex-shrink: 0;
-		position: relative;
-		transition: width 0.2s;
-	}
-	.sidebar.collapsed {
-		width: 40px;
-		padding: 0.5rem;
-	}
-	.sidebar-toggle {
-		background: none;
-		border: 1px solid #3d4060;
-		color: #e0e0e0;
-		cursor: pointer;
-		padding: 0.25rem 0.5rem;
-		border-radius: 4px;
-		margin-bottom: 0.5rem;
-	}
-	.sidebar h2 {
-		font-size: 0.85rem;
-		text-transform: uppercase;
-		color: #8888aa;
-		margin: 1rem 0 0.5rem;
-	}
-	.sidebar select {
-		width: 100%;
-		padding: 0.4rem;
-		background: #0f1117;
-		color: #e0e0e0;
-		border: 1px solid #3d4060;
-		border-radius: 4px;
-	}
-	.sidebar label {
-		display: block;
-		font-size: 0.85rem;
-		margin-bottom: 0.75rem;
-		color: #aab;
-	}
-	.sidebar input[type='range'] {
-		width: 100%;
-		margin-top: 0.25rem;
-	}
-	.sidebar hr {
-		border: none;
-		border-top: 1px solid #2d3040;
-		margin: 1rem 0;
-	}
-	.stat {
-		font-size: 0.85rem;
-		margin-bottom: 0.3rem;
-	}
-
-	/* Main */
-	.main-content {
-		flex: 1;
-		padding: 2rem;
-		max-width: 1200px;
+	header {
+		text-align: center;
+		margin-bottom: 2rem;
 	}
 	h1 {
 		margin: 0 0 0.25rem;
+		font-size: 1.8rem;
 	}
 	.subtitle {
 		color: #8888aa;
-		margin: 0 0 1.5rem;
+		margin: 0 0 0.5rem;
+		font-size: 0.95rem;
 	}
-	.step {
-		margin-bottom: 1.5rem;
-	}
-	.step h2 {
-		font-size: 1.1rem;
-		margin-bottom: 0.75rem;
-	}
-	hr {
-		border: none;
-		border-top: 1px solid #2d3040;
-		margin: 1.5rem 0;
-	}
-
-	/* Prompt source tabs */
-	.prompt-source-tabs {
-		display: flex;
-		gap: 0;
-		margin-bottom: 0.75rem;
-	}
-	.prompt-source-tabs button {
-		padding: 0.5rem 1rem;
-		background: #1a1d27;
-		border: 1px solid #3d4060;
-		color: #aab;
-		cursor: pointer;
+	.counter {
+		display: inline-block;
+		background: #1a2540;
+		border: 1px solid #2a5cff44;
+		border-radius: 20px;
+		padding: 0.3rem 1rem;
 		font-size: 0.85rem;
-	}
-	.prompt-source-tabs button:first-child {
-		border-radius: 6px 0 0 6px;
-	}
-	.prompt-source-tabs button:last-child {
-		border-radius: 0 6px 6px 0;
-	}
-	.prompt-source-tabs button.active {
-		background: #2a5cff;
-		color: white;
-		border-color: #2a5cff;
+		color: #7aa3ff;
 	}
 
-	.prompt-select {
-		width: 100%;
-		padding: 0.5rem;
+	/* Prompt */
+	.prompt-section {
 		background: #1a1d27;
-		color: #e0e0e0;
 		border: 1px solid #3d4060;
+		border-radius: 10px;
+		padding: 1.25rem;
+		margin-bottom: 1.25rem;
+	}
+	.prompt-label {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin-bottom: 0.75rem;
+		flex-wrap: wrap;
+	}
+	.prompt-id {
+		font-size: 0.8rem;
+		font-weight: 600;
+		color: #7aa3ff;
+		background: #1a2540;
+		padding: 0.15rem 0.5rem;
 		border-radius: 4px;
-		margin-bottom: 0.5rem;
+	}
+	.tag {
+		font-size: 0.7rem;
+		color: #888;
+		background: #252838;
+		padding: 0.1rem 0.4rem;
+		border-radius: 3px;
+	}
+	.prompt-text {
+		font-size: 1rem;
+		line-height: 1.6;
 	}
 
-	.custom-prompt {
-		width: 100%;
-		padding: 0.75rem;
-		background: #1a1d27;
-		color: #e0e0e0;
-		border: 1px solid #3d4060;
-		border-radius: 4px;
-		resize: vertical;
-		font-family: inherit;
-		box-sizing: border-box;
+	/* Actions */
+	.actions {
+		display: flex;
+		gap: 0.75rem;
+		margin-bottom: 1.25rem;
 	}
-
-	/* Buttons */
 	.btn {
-		padding: 0.5rem 1.25rem;
+		padding: 0.6rem 1.5rem;
 		border: 1px solid #3d4060;
 		border-radius: 6px;
 		background: #1a1d27;
@@ -603,64 +522,45 @@
 	.btn.primary:hover:not(:disabled) {
 		background: #1e4bdb;
 	}
-	.btn-row {
-		display: flex;
-		gap: 0.75rem;
-		flex-wrap: wrap;
-	}
-	.link-btn {
-		background: none;
-		border: none;
-		color: #5588ff;
-		cursor: pointer;
-		padding: 0.25rem 0;
-		font-size: 0.85rem;
-		text-decoration: underline;
-	}
 
-	/* Info / Error boxes */
-	.info-box {
-		background: #1a2540;
-		border: 1px solid #2a5cff44;
-		border-radius: 6px;
-		padding: 0.75rem;
-		margin-top: 0.5rem;
-		font-size: 0.9rem;
-		line-height: 1.5;
-	}
-	.error-box {
-		background: #401a1a;
-		border: 1px solid #ff4444;
-		border-radius: 6px;
-		padding: 0.75rem;
-		margin-top: 0.5rem;
-		color: #ff8888;
-	}
-	.details-box {
-		background: #1a1d27;
-		border: 1px solid #3d4060;
-		border-radius: 6px;
-		padding: 0.75rem;
-		margin-top: 0.5rem;
-		font-size: 0.9rem;
-		line-height: 1.5;
-	}
-
-	/* Response grid */
-	.response-grid {
+	/* Responses */
+	.responses {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
 		gap: 1rem;
+		margin-bottom: 1rem;
 	}
 	.response-card {
 		background: #1a1d27;
-		border: 1px solid #3d4060;
-		border-radius: 8px;
-		padding: 1rem;
+		border: 2px solid #3d4060;
+		border-radius: 10px;
+		padding: 1.25rem;
+		text-align: left;
+		color: #e0e0e0;
+		font-family: inherit;
+		font-size: inherit;
+		width: 100%;
+	}
+	.response-card.clickable {
+		cursor: pointer;
+		transition: border-color 0.15s, transform 0.1s;
+	}
+	.response-card.clickable:hover:not(:disabled) {
+		border-color: #2a5cff;
+		transform: translateY(-2px);
+	}
+	.response-card.clickable:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+		transform: none;
+	}
+	.response-card.streaming {
+		border-color: #2a5cff44;
 	}
 	.response-card h3 {
-		margin: 0 0 0.5rem;
+		margin: 0 0 0.75rem;
 		font-size: 1rem;
+		color: #7aa3ff;
 	}
 	.response-text {
 		white-space: pre-wrap;
@@ -669,55 +569,47 @@
 		max-height: 500px;
 		overflow-y: auto;
 	}
-	.meta {
-		background: #0f1117;
-		padding: 0.5rem;
-		border-radius: 4px;
-		font-size: 0.8rem;
-		overflow-x: auto;
+
+	.cursor {
+		animation: blink 0.8s step-end infinite;
+		color: #2a5cff;
+		font-weight: bold;
+	}
+	@keyframes blink {
+		50% { opacity: 0; }
 	}
 
-	/* Preference row */
-	.pref-row {
-		display: flex;
-		gap: 0.75rem;
-	}
-	.pref-row .btn {
-		flex: 1;
+	/* Tie */
+	.tie-row {
 		text-align: center;
+		margin-bottom: 1rem;
 	}
-
-	/* History */
-	.history {
-		margin-top: 0.5rem;
-	}
-	.history-item {
-		padding: 0.4rem 0;
+	.tie-btn {
+		color: #aab;
 		font-size: 0.85rem;
-		border-bottom: 1px solid #1a1d27;
-	}
-	.history-item code {
-		background: #252838;
-		padding: 0.1rem 0.3rem;
-		border-radius: 3px;
-		font-size: 0.8rem;
 	}
 
-	.muted {
-		color: #666;
+	/* Saving */
+	.saving-indicator {
+		text-align: center;
+		color: #7aa3ff;
+		font-size: 0.85rem;
+		padding: 0.5rem;
+	}
+
+	/* Error */
+	.error-box {
+		background: #401a1a;
+		border: 1px solid #ff4444;
+		border-radius: 6px;
+		padding: 0.75rem;
+		margin-bottom: 1rem;
+		color: #ff8888;
 	}
 
 	@media (max-width: 768px) {
-		.response-grid {
+		.responses {
 			grid-template-columns: 1fr;
-		}
-		.sidebar {
-			width: 100%;
-			border-right: none;
-			border-bottom: 1px solid #2d3040;
-		}
-		.app-layout {
-			flex-direction: column;
 		}
 	}
 </style>
