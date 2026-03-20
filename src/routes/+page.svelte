@@ -21,6 +21,11 @@
 	let errorMessage = $state('');
 	let sessionCount = $state(0);
 	let usedPromptIds: string[] = $state([]);
+	let responsesReadyAt: number | null = $state(null);
+	let scrolledA = $state(false);
+	let scrolledB = $state(false);
+	let elA: HTMLDivElement | undefined = $state(undefined);
+	let elB: HTMLDivElement | undefined = $state(undefined);
 
 	// ── Pre-generation state ────────────────────────────────────────
 	let pregenPrompt: Prompt | null = null;
@@ -167,6 +172,8 @@
 		responseB = null;
 		streamingTextA = '';
 		streamingTextB = '';
+		scrolledA = false;
+		scrolledB = false;
 
 		const [tA, tB] = assignTemperatures();
 		tempA = tA;
@@ -183,6 +190,7 @@
 			]);
 			responseA = a;
 			responseB = b;
+			responsesReadyAt = Date.now();
 
 			// Start pre-generating the next pair while user reads
 			startPreGeneration();
@@ -200,10 +208,13 @@
 		errorMessage = '';
 
 		const now = new Date().toISOString();
+		const readingTime = responsesReadyAt ? (Date.now() - responsesReadyAt) / 1000 : 0;
+		const hasOverflowA = !!elA && elA.scrollHeight > elA.clientHeight;
+		const hasOverflowB = !!elB && elB.scrollHeight > elB.clientHeight;
 		let chosen: string, rejected: string;
 		let chosenMeta: ResponseMeta, rejectedMeta: ResponseMeta;
 
-		if (pref === 'B') {
+		if (pref === 'B' || (pref === 'tie' && Math.random() < 0.5)) {
 			chosen = responseB.text;
 			rejected = responseA.text;
 			chosenMeta = responseB;
@@ -222,7 +233,7 @@
 			rejected,
 			preference: pref,
 			is_tie: pref === 'tie',
-			prompt_category: 'general',
+			prompt_category: currentPrompt.id.split('-')[0],
 			prompt_id: currentPrompt.id,
 			prompt_tags: currentPrompt.tags,
 			chosen_metadata: {
@@ -242,7 +253,12 @@
 				latency_s: rejectedMeta.latency_s,
 				response_id: rejectedMeta.response_id,
 				stop_reason: rejectedMeta.stop_reason
-			}
+			},
+			reading_time_s: Math.round(readingTime * 100) / 100,
+			temp_a: tempA,
+			temp_b: tempB,
+			scrolled_a: hasOverflowA ? scrolledA : null,
+			scrolled_b: hasOverflowB ? scrolledB : null
 		};
 
 		try {
@@ -265,6 +281,8 @@
 		streamingTextA = '';
 		streamingTextB = '';
 		errorMessage = '';
+		scrolledA = false;
+		scrolledB = false;
 
 		// Check if pre-generated pair is ready
 		if (pregenPromise) {
@@ -280,6 +298,7 @@
 			tempB = pregenTempB;
 			streamingTextA = pregenA.text;
 			streamingTextB = pregenB.text;
+			responsesReadyAt = Date.now();
 
 			// Clear pre-gen state
 			pregenPrompt = null;
@@ -394,7 +413,7 @@
 				onclick={() => selectPreference('A')}
 			>
 				<h3>Response A</h3>
-				<div class="response-text">{responseA.text}</div>
+				<div class="response-text" bind:this={elA} onscroll={() => { scrolledA = true; }}>{responseA.text}</div>
 			</button>
 
 			<button
@@ -403,7 +422,7 @@
 				onclick={() => selectPreference('B')}
 			>
 				<h3>Response B</h3>
-				<div class="response-text">{responseB.text}</div>
+				<div class="response-text" bind:this={elB} onscroll={() => { scrolledB = true; }}>{responseB.text}</div>
 			</button>
 		</section>
 

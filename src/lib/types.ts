@@ -9,7 +9,6 @@ export interface ResponseMeta {
 	text: string;
 	model: string;
 	temperature: number;
-	max_tokens: number;
 	input_tokens: number;
 	output_tokens: number;
 	stop_reason: string;
@@ -27,6 +26,11 @@ export interface PreferenceRecord {
 	prompt_category: string;
 	prompt_id: string | null;
 	prompt_tags: string[] | null;
-	chosen_metadata: Omit<ResponseMeta, 'text' | 'max_tokens'>;
-	rejected_metadata: Omit<ResponseMeta, 'text' | 'max_tokens'>;
+	chosen_metadata: Omit<ResponseMeta, 'text'>;
+	rejected_metadata: Omit<ResponseMeta, 'text'>;
+	reading_time_s: number;
+	temp_a: number;
+	temp_b: number;
+	scrolled_a: boolean | null;
+	scrolled_b: boolean | null;
 }
