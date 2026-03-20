@@ -43,9 +43,9 @@ try { db.exec(`ALTER TABLE preferences ADD COLUMN scrolled_b INTEGER`); } catch 
 db.exec(`CREATE INDEX IF NOT EXISTS idx_preferences_prompt_id ON preferences(prompt_id)`);
 db.exec(`CREATE INDEX IF NOT EXISTS idx_preferences_category ON preferences(prompt_category)`);
 
+export default db;
+
 export const insertPreference = db.prepare(`
 	INSERT INTO preferences (timestamp, prompt, chosen, rejected, preference, is_tie, prompt_category, prompt_id, prompt_tags, chosen_metadata, rejected_metadata, reading_time_s, user_ip, temp_a, temp_b, scrolled_a, scrolled_b)
 	VALUES (@timestamp, @prompt, @chosen, @rejected, @preference, @is_tie, @prompt_category, @prompt_id, @prompt_tags, @chosen_metadata, @rejected_metadata, @reading_time_s, @user_ip, @temp_a, @temp_b, @scrolled_a, @scrolled_b)
 `);
-
-export default db;
