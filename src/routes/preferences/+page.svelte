@@ -6,18 +6,18 @@
 		chosen: string;
 		rejected: string;
 		preference: string;
-		is_tie: number;
+		is_tie: boolean;
 		prompt_category: string | null;
 		prompt_id: string | null;
-		prompt_tags: string | null;
-		chosen_metadata: string | null;
-		rejected_metadata: string | null;
+		prompt_tags: string[] | null;
+		chosen_metadata: Record<string, unknown> | null;
+		rejected_metadata: Record<string, unknown> | null;
 		reading_time_s: number | null;
 		user_ip: string | null;
 		temp_a: number | null;
 		temp_b: number | null;
-		scrolled_a: number | null;
-		scrolled_b: number | null;
+		scrolled_a: boolean | null;
+		scrolled_b: boolean | null;
 		created_at: string;
 	}
 
@@ -55,9 +55,12 @@
 	let confirmDeleteAll = $state(false);
 	let deleteConfirmText = $state('');
 
-	function parseMeta(raw: string | null): Record<string, unknown> | null {
+	function parseMeta(raw: Record<string, unknown> | null): Record<string, unknown> | null {
 		if (!raw) return null;
-		try { return JSON.parse(raw); } catch { return null; }
+		if (typeof raw === 'string') {
+			try { return JSON.parse(raw); } catch { return null; }
+		}
+		return raw;
 	}
 
 	function scrollBadge(row: Preference): { text: string; warn: boolean } {
@@ -66,10 +69,10 @@
 		if (a == null && b == null) return { text: '-', warn: false };
 		const scrolled: string[] = [];
 		const missed: string[] = [];
-		if (a === 1) scrolled.push('A');
-		if (a === 0) missed.push('A');
-		if (b === 1) scrolled.push('B');
-		if (b === 0) missed.push('B');
+		if (a === true) scrolled.push('A');
+		if (a === false) missed.push('A');
+		if (b === true) scrolled.push('B');
+		if (b === false) missed.push('B');
 		if (missed.length > 0) {
 			return { text: missed.length === 2 ? 'none' : '!' + missed[0], warn: true };
 		}
@@ -161,7 +164,7 @@
 
 		// Scroll tracking — null means no overflow (short content), 0 = overflow not scrolled, 1 = overflow scrolled
 		const scrollRows = rows.filter(r => r.scrolled_a != null || r.scrolled_b != null);
-		const unreadOverflow = scrollRows.filter(r => r.scrolled_a === 0 || r.scrolled_b === 0).length;
+		const unreadOverflow = scrollRows.filter(r => r.scrolled_a === false || r.scrolled_b === false).length;
 		const fullyRead = scrollRows.length - unreadOverflow;
 		const noScrollData = rows.length - scrollRows.length;
 
@@ -361,7 +364,7 @@
 			<h4>Database Schema</h4>
 			<ul>
 				<li>Each record stores: prompt text, chosen/rejected responses, preference (A/B/tie), full generation metadata (model, temperature, tokens, latency, response ID) for both responses, reading time, scroll engagement per side (null if no overflow, true/false if overflow existed), annotator IP, and the temperature assigned to each side (A/B).</li>
-				<li>SQLite with WAL mode for concurrent read/write performance.</li>
+				<li>PostgreSQL hosted on Supabase for persistent, reliable storage.</li>
 			</ul>
 		</details>
 

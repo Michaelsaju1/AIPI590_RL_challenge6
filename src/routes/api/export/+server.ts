@@ -1,11 +1,13 @@
 import type { RequestHandler } from './$types';
-import db from '$lib/db';
+import { db } from '$lib/db';
+import { preferences } from '$lib/schema';
+import { asc } from 'drizzle-orm';
 
 export const GET: RequestHandler = async ({ url }) => {
 	const format = url.searchParams.get('format') ?? 'json';
 
 	try {
-		const rows = db.prepare('SELECT * FROM preferences ORDER BY id ASC').all() as Record<string, unknown>[];
+		const rows = await db.select().from(preferences).orderBy(asc(preferences.id));
 
 		if (rows.length === 0) {
 			if (format === 'csv') {
@@ -25,11 +27,10 @@ export const GET: RequestHandler = async ({ url }) => {
 		}
 
 		if (format === 'csv') {
-			// Parse JSON metadata fields into flat columns for CSV
 			const flatRows = rows.map((row) => {
-				const chosenMeta = row.chosen_metadata ? JSON.parse(row.chosen_metadata as string) : {};
-				const rejectedMeta = row.rejected_metadata ? JSON.parse(row.rejected_metadata as string) : {};
-				const tags = row.prompt_tags ? JSON.parse(row.prompt_tags as string) : [];
+				const chosenMeta = (row.chosen_metadata ?? {}) as Record<string, unknown>;
+				const rejectedMeta = (row.rejected_metadata ?? {}) as Record<string, unknown>;
+				const tags = (row.prompt_tags ?? []) as string[];
 
 				return {
 					id: row.id,
@@ -72,7 +73,6 @@ export const GET: RequestHandler = async ({ url }) => {
 			for (const row of flatRows) {
 				const values = headers.map((h) => {
 					const val = String(row[h as keyof typeof row] ?? '');
-					// Escape CSV: wrap in quotes if contains comma, quote, or newline
 					if (val.includes(',') || val.includes('"') || val.includes('\n') || val.includes('\r')) {
 						return '"' + val.replace(/"/g, '""') + '"';
 					}
@@ -89,15 +89,7 @@ export const GET: RequestHandler = async ({ url }) => {
 			});
 		}
 
-		// JSON format — parse the stringified JSON fields back into objects
-		const parsed = rows.map((row) => ({
-			...row,
-			chosen_metadata: row.chosen_metadata ? JSON.parse(row.chosen_metadata as string) : null,
-			rejected_metadata: row.rejected_metadata ? JSON.parse(row.rejected_metadata as string) : null,
-			prompt_tags: row.prompt_tags ? JSON.parse(row.prompt_tags as string) : null
-		}));
-
-		return new Response(JSON.stringify(parsed, null, 2), {
+		return new Response(JSON.stringify(rows, null, 2), {
 			headers: {
 				'Content-Type': 'application/json; charset=utf-8',
 				'Content-Disposition': `attachment; filename="preferences_${new Date().toISOString().slice(0, 10)}.json"`
