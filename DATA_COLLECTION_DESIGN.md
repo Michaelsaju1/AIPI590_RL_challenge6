@@ -26,7 +26,7 @@ This document describes every design choice made for the human preference data c
 - **Random independent temperatures:** Could produce two very similar temperatures (e.g., 0.45 vs 0.48), wasting a generation pair.
 - **Fixed temperatures (e.g., 0.3 vs 0.9):** Guarantees variation but makes every pair the same comparison, and annotators might learn to pattern-match "the creative one vs. the safe one."
 
-**Decision:** One low temperature randomly chosen from [0.3, 0.4, 0.5] and one high temperature from [0.7, 0.8, 0.9]. This guarantees meaningful variation in every pair while adding enough randomness that annotators can't predict which response has which temperature. The randomized selection within each band prevents every pair from being the exact same comparison.
+**Decision:** One low temperature randomly chosen from [0.1, 0.2, 0.3] and one high temperature from [0.8, 0.9, 1.0]. This guarantees meaningful variation in every pair while adding enough randomness that annotators can't predict which response has which temperature. The randomized selection within each band prevents every pair from being the exact same comparison.
 
 ### Side Assignment Randomization
 

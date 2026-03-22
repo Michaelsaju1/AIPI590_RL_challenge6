@@ -1,12 +1,18 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+	import { marked } from 'marked';
 	import { getRandomPrompt } from '$lib/prompts';
 	import type { Prompt, ResponseMeta, PreferenceRecord } from '$lib/types';
 
 	// ── Constants ────────────────────────────────────────────────────
 	const MODEL = 'claude-haiku-4-5';
 	const MAX_TOKENS = 512;
-	const LOW_TEMPS = [0.3, 0.4, 0.5];
-	const HIGH_TEMPS = [0.7, 0.8, 0.9];
+	const LOW_TEMPS = [0.1, 0.2, 0.3];
+	const HIGH_TEMPS = [0.8, 0.9, 1.0];
+	const GOAL_COUNT = 5;
+
+	// Configure marked for safe rendering
+	marked.setOptions({ breaks: true, gfm: true });
 
 	// ── State ────────────────────────────────────────────────────────
 	let currentPrompt: Prompt | null = $state(null);
@@ -22,10 +28,12 @@
 	let sessionCount = $state(0);
 	let usedPromptIds: string[] = $state([]);
 	let responsesReadyAt: number | null = $state(null);
+	let streamingStartedAt: number | null = $state(null);
 	let scrolledA = $state(false);
 	let scrolledB = $state(false);
 	let elA: HTMLDivElement | undefined = $state(undefined);
 	let elB: HTMLDivElement | undefined = $state(undefined);
+	let showInstructions = $state(true);
 
 	// ── Pre-generation state ────────────────────────────────────────
 	let pregenPrompt: Prompt | null = null;
@@ -47,8 +55,16 @@
 		return [high, low];
 	}
 
+	function renderMarkdown(text: string): string {
+		return marked.parse(text, { async: false }) as string;
+	}
+
 	// ── Init ─────────────────────────────────────────────────────────
 	currentPrompt = getRandomPrompt();
+
+	onMount(() => {
+		generatePair();
+	});
 
 	// ── Streaming API call ───────────────────────────────────────────
 	async function fetchResponseStreaming(
@@ -174,6 +190,7 @@
 		streamingTextB = '';
 		scrolledA = false;
 		scrolledB = false;
+		streamingStartedAt = null;
 
 		const [tA, tB] = assignTemperatures();
 		tempA = tA;
@@ -182,9 +199,11 @@
 		try {
 			const [a, b] = await Promise.all([
 				fetchResponseStreaming(currentPrompt.prompt, tA, (text) => {
+					if (!streamingStartedAt) streamingStartedAt = Date.now();
 					streamingTextA = text;
 				}),
 				fetchResponseStreaming(currentPrompt.prompt, tB, (text) => {
+					if (!streamingStartedAt) streamingStartedAt = Date.now();
 					streamingTextB = text;
 				})
 			]);
@@ -208,7 +227,10 @@
 		errorMessage = '';
 
 		const now = new Date().toISOString();
-		const readingTime = responsesReadyAt ? (Date.now() - responsesReadyAt) / 1000 : 0;
+		// Use streamingStartedAt for streamed responses (user reads as words come in)
+		// Use responsesReadyAt for pre-generated responses (text appears all at once)
+		const timerStart = streamingStartedAt ?? responsesReadyAt;
+		const readingTime = timerStart ? (Date.now() - timerStart) / 1000 : 0;
 		const hasOverflowA = !!elA && elA.scrollHeight > elA.clientHeight;
 		const hasOverflowB = !!elB && elB.scrollHeight > elB.clientHeight;
 		let chosen: string, rejected: string;
@@ -283,6 +305,7 @@
 		errorMessage = '';
 		scrolledA = false;
 		scrolledB = false;
+		streamingStartedAt = null;
 
 		// Check if pre-generated pair is ready
 		if (pregenPromise) {
@@ -348,15 +371,40 @@
 	<title>Human Preference Collector</title>
 </svelte:head>
 
+{#if showInstructions}
+<div class="modal-overlay">
+	<div class="modal">
+		<h2>Welcome to the Human Preference Collector</h2>
+		<p>You'll be shown a prompt and two AI-generated responses side by side. Your job is to <strong>read both responses carefully</strong> and pick the one you prefer, or mark them as a tie.</p>
+		<ul>
+			<li>Take your time reading each response fully before choosing.</li>
+			<li>There are no right or wrong answers — go with your genuine preference.</li>
+			<li>You only need to complete <strong>{GOAL_COUNT} evaluations</strong>. Quality matters more than quantity — 5 careful reads are worth more than 20 rushed ones.</li>
+			<li>After {GOAL_COUNT}, you can keep going if you'd like, but there's no pressure.</li>
+		</ul>
+		<button class="btn primary modal-ok" onclick={() => showInstructions = false}>Got it, let's start</button>
+	</div>
+</div>
+{/if}
+
 <div class="container">
 	<header>
-		<h1>Human Preference Collector</h1>
-		<p class="subtitle">
-			Read the prompt, generate two responses, then pick the one you prefer.
-			Your choice is saved automatically.
-		</p>
-		{#if sessionCount > 0}
-			<div class="counter">{sessionCount} preference{sessionCount === 1 ? '' : 's'} saved this session</div>
+		<div class="header-top">
+			<div class="progress-counter">
+				{#if sessionCount < GOAL_COUNT}
+					{sessionCount} / {GOAL_COUNT}
+				{:else}
+					{sessionCount} done
+				{/if}
+			</div>
+			<h1>Human Preference Collector</h1>
+		</div>
+		{#if sessionCount >= GOAL_COUNT}
+			<div class="thank-you">Thank you! You can keep going if you'd like, but you've completed the goal.</div>
+		{:else}
+			<p class="subtitle">
+				Read both responses carefully, then click the one you prefer.
+			</p>
 		{/if}
 	</header>
 
@@ -373,17 +421,10 @@
 		<div class="prompt-text">{currentPrompt?.prompt}</div>
 	</section>
 
-	<!-- Generate / New Prompt -->
+	<!-- New Prompt (generate button removed — auto-generates on load) -->
 	<section class="actions">
-		<button
-			class="btn primary"
-			disabled={generating || saving || !currentPrompt || (responseA !== null && responseB !== null)}
-			onclick={generatePair}
-		>
-			{generating ? 'Streaming responses...' : 'Generate Response Pair'}
-		</button>
 		<button class="btn" disabled={generating || saving} onclick={newPrompt}>
-			New Prompt
+			Skip Prompt
 		</button>
 	</section>
 
@@ -396,11 +437,11 @@
 		<section class="responses">
 			<div class="response-card streaming">
 				<h3>Response A {streamingTextA ? '' : '(waiting...)'}</h3>
-				<div class="response-text">{streamingTextA}<span class="cursor">|</span></div>
+				<div class="response-text markdown-body">{@html renderMarkdown(streamingTextA)}<span class="cursor">|</span></div>
 			</div>
 			<div class="response-card streaming">
 				<h3>Response B {streamingTextB ? '' : '(waiting...)'}</h3>
-				<div class="response-text">{streamingTextB}<span class="cursor">|</span></div>
+				<div class="response-text markdown-body">{@html renderMarkdown(streamingTextB)}<span class="cursor">|</span></div>
 			</div>
 		</section>
 	{/if}
@@ -413,7 +454,7 @@
 				onclick={() => selectPreference('A')}
 			>
 				<h3>Response A</h3>
-				<div class="response-text" bind:this={elA} onscroll={() => { scrolledA = true; }}>{responseA.text}</div>
+				<div class="response-text markdown-body" bind:this={elA} onscroll={() => { scrolledA = true; }}>{@html renderMarkdown(responseA.text)}</div>
 			</button>
 
 			<button
@@ -422,7 +463,7 @@
 				onclick={() => selectPreference('B')}
 			>
 				<h3>Response B</h3>
-				<div class="response-text" bind:this={elB} onscroll={() => { scrolledB = true; }}>{responseB.text}</div>
+				<div class="response-text markdown-body" bind:this={elB} onscroll={() => { scrolledB = true; }}>{@html renderMarkdown(responseB.text)}</div>
 			</button>
 		</section>
 
@@ -447,6 +488,48 @@
 		color: #e0e0e0;
 	}
 
+	/* ── Modal ─────────────────────────────────────────────────── */
+	.modal-overlay {
+		position: fixed;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.75);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 100;
+	}
+	.modal {
+		background: #1a1d27;
+		border: 1px solid #3d4060;
+		border-radius: 12px;
+		padding: 2rem 2.5rem;
+		max-width: 560px;
+		width: 90%;
+		color: #e0e0e0;
+	}
+	.modal h2 {
+		margin: 0 0 1rem;
+		font-size: 1.3rem;
+	}
+	.modal p {
+		line-height: 1.6;
+		margin: 0 0 1rem;
+		font-size: 0.95rem;
+	}
+	.modal ul {
+		margin: 0 0 1.5rem;
+		padding-left: 1.25rem;
+		line-height: 1.7;
+		font-size: 0.9rem;
+	}
+	.modal-ok {
+		display: block;
+		width: 100%;
+		padding: 0.75rem;
+		font-size: 1rem;
+	}
+
+	/* ── Layout ────────────────────────────────────────────────── */
 	.container {
 		max-width: 1100px;
 		margin: 0 auto;
@@ -457,6 +540,13 @@
 		text-align: center;
 		margin-bottom: 2rem;
 	}
+	.header-top {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 1rem;
+		position: relative;
+	}
 	h1 {
 		margin: 0 0 0.25rem;
 		font-size: 1.8rem;
@@ -466,14 +556,27 @@
 		margin: 0 0 0.5rem;
 		font-size: 0.95rem;
 	}
-	.counter {
-		display: inline-block;
+	.progress-counter {
+		position: absolute;
+		left: 0;
+		top: 50%;
+		transform: translateY(-50%);
 		background: #1a2540;
 		border: 1px solid #2a5cff44;
 		border-radius: 20px;
 		padding: 0.3rem 1rem;
-		font-size: 0.85rem;
+		font-size: 0.9rem;
+		font-weight: 600;
 		color: #7aa3ff;
+	}
+	.thank-you {
+		margin: 0.5rem 0;
+		padding: 0.5rem 1rem;
+		background: #1a2a1a;
+		border: 1px solid #44bb6644;
+		border-radius: 8px;
+		color: #88cc88;
+		font-size: 0.9rem;
 	}
 
 	/* Prompt */
@@ -582,11 +685,79 @@
 		color: #7aa3ff;
 	}
 	.response-text {
-		white-space: pre-wrap;
 		line-height: 1.6;
 		font-size: 0.9rem;
 		max-height: 500px;
 		overflow-y: auto;
+	}
+
+	/* ── Markdown body styles ──────────────────────────────── */
+	.markdown-body :global(p) {
+		margin: 0 0 0.75rem;
+	}
+	.markdown-body :global(p:last-child) {
+		margin-bottom: 0;
+	}
+	.markdown-body :global(h1),
+	.markdown-body :global(h2),
+	.markdown-body :global(h3),
+	.markdown-body :global(h4) {
+		margin: 1rem 0 0.5rem;
+		color: #c0c8e0;
+	}
+	.markdown-body :global(h1) { font-size: 1.2rem; }
+	.markdown-body :global(h2) { font-size: 1.1rem; }
+	.markdown-body :global(h3) { font-size: 1rem; }
+	.markdown-body :global(ul),
+	.markdown-body :global(ol) {
+		margin: 0.5rem 0;
+		padding-left: 1.5rem;
+	}
+	.markdown-body :global(li) {
+		margin-bottom: 0.25rem;
+	}
+	.markdown-body :global(code) {
+		background: #12141c;
+		padding: 0.15rem 0.4rem;
+		border-radius: 4px;
+		font-size: 0.85rem;
+		font-family: 'Consolas', 'Monaco', monospace;
+	}
+	.markdown-body :global(pre) {
+		background: #12141c;
+		padding: 0.75rem;
+		border-radius: 6px;
+		overflow-x: auto;
+		margin: 0.5rem 0;
+	}
+	.markdown-body :global(pre code) {
+		background: none;
+		padding: 0;
+	}
+	.markdown-body :global(blockquote) {
+		border-left: 3px solid #3d4060;
+		margin: 0.5rem 0;
+		padding: 0.25rem 0.75rem;
+		color: #aab;
+	}
+	.markdown-body :global(strong) {
+		color: #e8e8f0;
+	}
+	.markdown-body :global(table) {
+		border-collapse: collapse;
+		margin: 0.5rem 0;
+		width: 100%;
+	}
+	.markdown-body :global(th),
+	.markdown-body :global(td) {
+		border: 1px solid #3d4060;
+		padding: 0.4rem 0.6rem;
+		font-size: 0.85rem;
+		text-align: left;
+	}
+	.markdown-body :global(th) {
+		background: #1a2540;
+		color: #7aa3ff;
 	}
 
 	.cursor {

@@ -17,7 +17,11 @@
       "Bash(bun run:*)",
       "Bash(npx svelte-check:*)",
       "Bash(npx vite:*)",
-      "Bash(bun remove:*)"
+      "Bash(bun remove:*)",
+      "Bash(ls -la /c/Users/Micha/Documents/Duke_Classes/AIPI_590_RL/AIPI590_RL_challenge6/*.db)",
+      "Bash(mkdir -p /c/Users/Micha/Documents/Duke_Classes/AIPI_590_RL/data_backup)",
+      "Bash(cp /c/Users/Micha/Documents/Duke_Classes/AIPI_590_RL/AIPI590_RL_challenge6/preferences.db /c/Users/Micha/Documents/Duke_Classes/AIPI_590_RL/data_backup/preferences_backup_2026-03-22.db)",
+      "Read(//c/Users/Micha/Documents/Duke_Classes/AIPI_590_RL/**)"
     ]
   }
 }
