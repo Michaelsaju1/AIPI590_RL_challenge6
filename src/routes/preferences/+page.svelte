@@ -69,10 +69,8 @@
 		if (a == null && b == null) return { text: '-', warn: false };
 		const scrolled: string[] = [];
 		const missed: string[] = [];
-		if (a === true) scrolled.push('A');
-		if (a === false) missed.push('A');
-		if (b === true) scrolled.push('B');
-		if (b === false) missed.push('B');
+		(a ? scrolled : missed).push('A');
+		(b ? scrolled : missed).push('B');
 		if (missed.length > 0) {
 			return { text: missed.length === 2 ? 'none' : '!' + missed[0], warn: true };
 		}
