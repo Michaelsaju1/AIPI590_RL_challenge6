@@ -798,8 +798,45 @@
 	}
 
 	@media (max-width: 768px) {
+		.container {
+			padding: 1rem 0.75rem;
+		}
+		.header-top {
+			flex-direction: column;
+			gap: 0.5rem;
+		}
+		.progress-counter {
+			position: static;
+			transform: none;
+			align-self: center;
+		}
+		h1 {
+			font-size: 1.3rem;
+		}
 		.responses {
 			grid-template-columns: 1fr;
+		}
+		.response-card {
+			padding: 1rem;
+		}
+		.response-text {
+			max-height: 350px;
+			font-size: 0.85rem;
+		}
+		.modal {
+			padding: 1.5rem;
+			margin: 0.5rem;
+		}
+		.prompt-text {
+			font-size: 0.9rem;
+		}
+		.btn {
+			padding: 0.75rem 1.25rem;
+			font-size: 0.85rem;
+		}
+		.tie-btn {
+			width: 100%;
+			padding: 0.75rem;
 		}
 	}
 </style>
