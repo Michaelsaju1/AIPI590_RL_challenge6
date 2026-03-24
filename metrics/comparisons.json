@@ -1,0 +1,72 @@
+[
+  {
+    "prompt": "### Prompt:\nA close friend asked me to be honest about their business idea, and I think it will fail. How do I give constructive feedback without crushing their enthusiasm?\n\n### Response:\n",
+    "base_response": "I don't think I should have said that. I've asked them, but I am not.\n###\nAs you can see, they are all very happy to know that they have the opportunity to offer a business experience.\n###\nI've been thinking about this for quite some time now. I have a few questions for you. I have just started a blog called \"Business Insider\" and I want to remind you that it's really an interesting topic. To do so, I have to ask some questions. The answer is that your business should be a business experience th",
+    "ppo_response": "I know that I am the person who gave the most constructive feedback.\n### Response:\nI am the person who gave the most constructive feedback.\n### Response:\nI am the person who gave the most constructive feedback.\n### Response:\nMy friend, I am the person who gave the most constructive feedback.\n### Response:\nMy friend, I am the person who gave the most constructive feedback.\n### Response:\nI am the person who gave the most constructive feedback.\n### Response:\nI am the person who gave the most constr",
+    "base_reward": -1.1265,
+    "ppo_reward": -0.2515
+  },
+  {
+    "prompt": "### Prompt:\nWhat is CRISPR and why is it considered revolutionary for medicine? What are the risks?\n\n### Response:\n",
+    "base_response": "CRISPR is a novel and exciting new approach to the discovery of a new class of drugs. It is a comprehensive treatment for cancer that can be used in a variety of areas of health, including cancer prevention, and the development of new medications and technologies. CRISPR is a drug that has powerful potential for treating and treating cancer. The treatment of cancer is a new type of cancer with new therapeutic potential.\n###",
+    "ppo_response": "1. This answer is based on the principle that 'in order to be effective, the individual must have to have a specific set of characteristics. This is called 'the individual must have a specific set of characteristics.' In the case of cancer, the individual must have an individual's genetic value. The individual must have an individual's genetic value. The individual must have an individual's genetic value. The individual must have an individual's genetic value. The individual must have an individ",
+    "base_reward": -1.3885,
+    "ppo_reward": 0.3546
+  },
+  {
+    "prompt": "### Prompt:\nWrite a poem about the feeling of being the last person awake in a house full of sleeping people.\n\n### Response:\n",
+    "base_response": "This is a question-and-answer session. We are looking into all the questions and answers in this session.\nSo, we set up a survey for the participants to answer in the next 24 hours.\nWe were able to answer a few of the questions, which we have not yet answered yet. Please leave a comment below.\n###",
+    "ppo_response": "The following text is not in the text.\n###\n###\n###\n###\n###\n###\n###\n###\n###\n###\n###\n###\n###\n###\n###\n###\n###\n###",
+    "base_reward": -2.3158,
+    "ppo_reward": -0.8703
+  },
+  {
+    "prompt": "### Prompt:\nShould wealthy nations accept unlimited refugees during a humanitarian crisis? What principles should guide immigration policy when resources are limited?\n\n### Response:\n",
+    "base_response": "We support the creation of a \u201cimmigration and multicultural solution\u202c. We believe we can achieve this through immigration and multicultural solutions\u202c. We believe that we can build a new life through immigration and multicultural solutions. We believe that we can create a new life through immigration and multicultural solutions.\n###",
+    "ppo_response": "The Refugee Council of the United States (RCC) is scheduled to publish the following response on April 23rd, 2009 at 9:00 AM EDT.",
+    "base_reward": -1.8549,
+    "ppo_reward": -2.7477
+  },
+  {
+    "prompt": "### Prompt:\nWhat is the difference between concurrency and parallelism? Give concrete examples in the context of a web server handling requests.\n\n### Response:\n",
+    "base_response": "To the following:\nNow, let's look at a web server using the same syntax:\n#{} {} {} {} {} {} #{}\nWhat is a concurrency algorithm?\nWell, we have a nice abstract syntax, not a formal syntax.\n#{} {} {} {} {} #{}\nWhat is a parallelism?\nBecause parallelism does not have parallelism, there are numerous ways to run a web server using parallelism. For example:\n#{} {} {} {} {} #{}\nIn this example we would",
+    "ppo_response": "Asynchronous HTTP requests are handled by a task that requires a single request.\n## The task you are going to try to get is the response.\n## The task you are going to try to get is the response.\n## Response:\n## The task you are going to try to get is the response.\n## The task you are going to try to get is the response.\n## The task you are going to try to get is the response.\n## The task you are going to try to get is the response.\n## The task you are going to try to get is the response.\n## The ",
+    "base_reward": -2.0718,
+    "ppo_reward": 0.1849
+  },
+  {
+    "prompt": "### Prompt:\nHow has the relationship between the United States and China evolved since 1972, and where is it heading? What are the most likely scenarios for the next decade?\n\n### Response:\n",
+    "base_response": "The United States and China have become the dominant players in the world economy, and the United States is a key player in the global economic development effort. China is the leading market leader with a strong and solid economy, with a strong economy, and a strong economy. China is the world's leading market leader, with a strong economy, and a strong economy. China is a leading market leader with a strong economy, and a strong economy. China is the leading market leader with a strong economy",
+    "ppo_response": "The United States has a long history of providing strong support for the U.S. and China through the Asia-Pacific Partnership. The U.S. has supported the China-China Cooperation and Economic Cooperation Initiative (AFEC), which has been instrumental in developing China-China relations and has provided support for its development and development of a wide variety of development programs. We are confident that China-China cooperation and economic cooperation will continue to grow as the world popul",
+    "base_reward": 0.59,
+    "ppo_reward": 0.1199
+  },
+  {
+    "prompt": "### Prompt:\nExplain the CAP theorem to someone who understands databases but has never heard of distributed systems. Why does it matter?\n\n### Response:\n",
+    "base_response": "This is a good question, and I think it could be answered by the following question:\nWhat should we do?\nThis is a really interesting question.\nWhy do we not do it?\nThis is a really interesting question.\nWhat should we do?\nThis is a really interesting question.\nWhat should we do?\nThis is a really interesting question.\nWhat should we do?\nThis is a really interesting question.\nWhat should we do?\nThis is a really interesting question.\nWhat should we do?\nThis is a really interesting question.\nWhat sh",
+    "ppo_response": "{1}\n{2}\n{3}\n{4}\n{5}\n{6}\n{7}\n{8}\n{9}\n{10}\n{11}\n{12}\n{13}\n{14}\n{15}\n{16}\n{17}\n{18}\n{19}\n{20}\n{21}\n{22}\n{23}\n{24}\n{25}\n{26}\n{27}\n{28}\n{29}\n{30}\n{31}\n{32}",
+    "base_reward": -0.2525,
+    "ppo_reward": -0.2902
+  },
+  {
+    "prompt": "### Prompt:\nIs privacy a fundamental right, or is it a luxury that must be balanced against security? How should we think about government surveillance?\n\n### Response:\n",
+    "base_response": "This report was prepared by the Director of National Intelligence under the auspices of the Office of National Intelligence.",
+    "ppo_response": "Thank you for the response.\n###",
+    "base_reward": -2.3982,
+    "ppo_reward": -2.1506
+  },
+  {
+    "prompt": "### Prompt:\nA junior developer asks you to explain git rebase vs git merge. When should you use each? What are the dangers of rebase?\n\n### Response:\n",
+    "base_response": "A senior developer asks you to explain git rebase vs git merge. When should you use each? What are the dangers of rebase?\n### Response:\nA senior developer asks you to explain git rebase vs git merge. When should you use each? What are the risks of rebase?\n### Response:\nA senior developer asks you to explain git rebase vs git merge. When should you use each? What are the risks of rebase?\n### Response:\nA senior developer asks you to explain git rebase vs git merge. When should you use each? What a",
+    "ppo_response": "A user asks you to explain git rebase vs git merge. When should you use each? What are the dangers of rebase?\n### Response:\nA user asks you to explain git rebase vs git merge. When should you use each? What are the dangers of rebase?\n### Response:\nA user asks you to explain git rebase vs git merge. When should you use each? What are the risks of rebase?\n### Response:\nA user asks you to explain git rebase vs git merge. When should you use each? What are the dangers of rebase?\n### Response:",
+    "base_reward": -0.0826,
+    "ppo_reward": -0.8535
+  },
+  {
+    "prompt": "### Prompt:\nWhat role did cryptography play in World War II, and how did it influence the outcome? Discuss both Enigma and the broader intelligence war.\n\n### Response:\n",
+    "base_response": "The RSA security policy review is open to all. This is a formal review and is open to all, including academics, researchers, and others.\n###",
+    "ppo_response": "http://en.wikipedia.org/wiki/Enigma_Meter_Sensors_Meter_Sensors_Meter_Sensors_Meter_Sensors_Meter_Sensors_Meter_Sensors_Meter_Sensors_Meter_Sensors_Meter_Sensors_Meter_Sensors_Meter_Sensors_Meter_Sensors_Meter_Sensors_Meter_Sensors_Meter_Sensors_Meter_Sensors_Meter_",
+    "base_reward": -2.0296,
+    "ppo_reward": -0.1755
+  }
+]

@@ -24,7 +24,16 @@
       "Read(//c/Users/Micha/Documents/Duke_Classes/AIPI_590_RL/**)",
       "Bash(find /c/Users/Micha/Documents/Duke_Classes/AIPI_590_RL/AIPI590_RL_challenge6 -type f \\\\\\(-name *.json -o -name *.prisma -o -name *.env* \\\\\\))",
       "Bash(sqlite3:*)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(find /c/Users/Micha/Documents/Duke_Classes/AIPI_590_RL/AIPI590_RL_challenge6 -type f -name *.env* -o -name *config* -o -name *supabase*)",
+      "Bash(grep -r \"supabase\\\\|DATABASE_URL\\\\|postgres\" /c/Users/Micha/Documents/Duke_Classes/AIPI_590_RL/AIPI590_RL_challenge6/src --include=*.ts --include=*.js --include=*.svelte)",
+      "Bash(bun -e \":*)",
+      "Bash(bun run -e \":*)",
+      "Bash(head -1 \"C:\\\\Users\\\\Micha\\\\Documents\\\\Duke_Classes\\\\AIPI_590_RL\\\\AIPI590_RL_challenge6\\\\preferences_2026-03-22 \\(1\\).csv\")",
+      "Bash(wc:*)",
+      "Bash(pip show:*)",
+      "Bash(find reward_model ppo_model -name *.safetensors -o -name *.pt)",
+      "Bash(xargs ls:*)"
     ]
   }
 }

@@ -1,0 +1,14 @@
+{
+  "signs_of_overoptimization": [
+    "PPO n-gram diversity (0.500) much lower than base (0.730)"
+  ],
+  "ngram_diversity": {
+    "base": 0.7304,
+    "ppo": 0.5
+  },
+  "response_lengths": {
+    "base_mean": 66.9,
+    "ppo_mean": 53.3
+  },
+  "summary": "Found 1 potential indicators. Overoptimization is expected with extended PPO training as the policy learns to exploit reward model blind spots rather than genuinely improve."
+}

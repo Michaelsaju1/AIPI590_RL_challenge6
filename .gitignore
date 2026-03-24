@@ -8,3 +8,11 @@ __pycache__
 preferences.db
 preferences.db-wal
 preferences.db-shm
+
+# Model artifacts (too large for git)
+reward_model/
+ppo_model/
+*.safetensors
+*.pt
+*.pth
+*.bin
